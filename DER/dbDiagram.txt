@@ -63,7 +63,7 @@ Table MedioPago {
   Id_Socio Integer [primary key]
   Id_MedioPago Integer [not null]
   Id_TipoMedio Integer [not null]
-  Datos_Medio TEXT 
+  Datos_Medio String 
 
 }
 
@@ -78,6 +78,7 @@ Table Morosidad {
 Table Tipo_Medio {
   Id_TipoMedio Integer [primary key]
   Nombre_Medio String [not null]
+  Datos_Requeridos String
 }
 
 Table Pago {
