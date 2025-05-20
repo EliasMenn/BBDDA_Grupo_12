@@ -1,13 +1,13 @@
 ------------------------------------------------------------------
 --MATERIA: BASES DE DATOS APLICADA
 --GRUPO: 12
---Melissari, Pedro
+--Melissari, Pedro 46912033
 --Del Valle, Federico
 --Medina, Juan
 --Mennella, Elias Damian 46357008
 ----------------------------------------------------------------
 
------------------- CREACI”N DE BBDD -------------------
+------------------ CREACI√ìN DE BBDD -------------------
 
 /*USE Master
   DROP DATABASE COM5600_G12*/
@@ -20,8 +20,8 @@ GO
 USE COM5600_G12
 GO
 
------------------- CREACI”N DE ESQUEMAS -------------------
--- Genere esquemas para organizar de forma lÛgica los componentes del sistema y aplique esto en la creaciÛn de objetos. NO use el esquema ìdboî. --
+------------------ CREACI√ìN DE ESQUEMAS -------------------
+-- Genere esquemas para organizar de forma l√≥gica los componentes del sistema y aplique esto en la creaci√≥n de objetos. NO use el esquema ‚Äúdbo‚Äù. --
 
 IF SCHEMA_ID('Person') IS NULL
 BEGIN
@@ -48,7 +48,7 @@ BEGIN
 	EXEC('CREATE SCHEMA Jornada'); --El Schema Jornada se utilizara para la tabla de Jornada
 END
 
------------------- CREACI”N DE TABLAS -------------------
+------------------ CREACI√ìN DE TABLAS -------------------
 -- Cree las entidades y relaciones. Incluya restricciones y claves --
 
 -- Tablas Pertenencientes al Schema Person --
@@ -115,8 +115,8 @@ BEGIN
 		Id_Rol INT NOT NULL,
 		Id_Persona INT UNIQUE NOT NULL,
 		Nombre_Usuario VARCHAR(30),
-		ContraseÒa VARCHAR(25),
-		Vigencia_ContraseÒa DATE,
+		Contrase√±a VARCHAR(25),
+		Vigencia_Contrase√±a DATE,
 		CONSTRAINT FK_Usuario_Rol
 		FOREIGN KEY (Id_Rol) REFERENCES Person.Rol(Id_Rol),
 		CONSTRAINT FK_Usuario_Persona
