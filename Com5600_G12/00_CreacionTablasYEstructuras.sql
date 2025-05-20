@@ -43,15 +43,16 @@ BEGIN
 	EXEC('CREATE SCHEMA Groups'); --El Schema Groups se vinculara con las tablas de Grupo_Familiar, Miembro_Familia, Categoria.
 END
 
-IF SCHEMA_ID('Day') IS NULL
+IF SCHEMA_ID('Jornada') IS NULL
 BEGIN
-	EXEC('CREATE SCHEMA Day'); --El Schema Day se utilizara para la tabla de Jornada
+	EXEC('CREATE SCHEMA Jornada'); --El Schema Jornada se utilizara para la tabla de Jornada
 END
 
 ------------------ CREACIÓN DE TABLAS -------------------
 -- Cree las entidades y relaciones. Incluya restricciones y claves --
 
 -- Tablas Pertenencientes al Schema Person --
+
 IF OBJECT_ID('Person.Persona', 'U') IS NULL
 BEGIN
 	CREATE TABLE Person.Persona
@@ -90,8 +91,6 @@ BEGIN
 		Nro_Obra_Social VARCHAR(20),
 		CONSTRAINT FK_Socio_Persona
 		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona),
-		/*CONSTRAINT FK_Socio_Categoria
-		FOREIGN KEY (Id_Categoria) REFERENCES Groups.Categoria(Id_Categoria),*/
 		CONSTRAINT FK_Socio_Tutor
 		FOREIGN KEY (Id_Tutor) REFERENCES Person.Tutor(Id_Tutor)
 
@@ -158,8 +157,6 @@ BEGIN
 		Descuento_Lluvia INT,
 		CONSTRAINT FK_Detalle_Factura
 		FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura)
-		/*CONSTRAINT FK_Detalle_Familia
-		FOREIGN KEY (Id_Familia) REFERENCES Groups.Grupo_Familiar(Id_Grupo_Familiar)*/
 	)
 END 
 
@@ -226,4 +223,166 @@ BEGIN
 		CONSTRAINT FK_Cuenta_Persona
 		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona)
 	)
+END
+
+-- Tablas Pertenecientes al Schema Activity --
+
+IF OBJECT_ID('Activity.Actividad') IS NULL
+BEGIN
+	CREATE TABLE Activity.Actividad
+	(
+		Id_Actividad INT IDENTITY (1,1) PRIMARY KEY,
+		Nombre VARCHAR(50),
+		Descr VARCHAR(50),
+		Costo DECIMAL
+	)
+END
+
+IF OBJECT_ID('Activity.Actividad_Extra') IS NULL
+BEGIN
+	CREATE TABLE Activity.Actividad_Extra
+	(
+		Id_Actividad_Extra INT IDENTITY (1,1) PRIMARY KEY,
+		Nombre VARCHAR(50),
+		Descr VARCHAR(50),
+		Costo_Soc DECIMAL,
+		Costo DECIMAL
+	)
+END
+
+IF OBJECT_ID('Activity.Horario_Actividad') IS NULL
+BEGIN 
+	CREATE TABLE Activity.Horario_Actividad
+	(
+		Id_Horario INT IDENTITY (1,1) PRIMARY KEY, 
+		Id_Actividad INT,
+		Id_Categoria INT,
+		Horario TIME,
+		Dias VARCHAR(25)
+		CONSTRAINT FK_Horario__Actividad
+		FOREIGN KEY (Id_Actividad) REFERENCES Activity.Actividad(Id_Actividad)
+	)
+END
+
+IF OBJECT_ID('Activity.Inscripto_Actividad') IS NULL
+BEGIN 
+	CREATE TABLE Activity.Inscripto_Actividad
+	(
+		Id_Horario INT,
+		Id_Socio INT,
+		Id_Detalle INT
+		CONSTRAINT FK_Inscripto_Horario
+		FOREIGN KEY (Id_Horario) REFERENCES Activity.Horario_Actividad(Id_Horario),
+		CONSTRAINT FK_Inscripto_Socio
+		FOREIGN KEY (Id_Socio) REFERENCES Person.Socio(Id_Socio),
+		CONSTRAINT FK_Inscripto_Detalle
+		FOREIGN KEY (Id_Detalle) REFERENCES Payment.Detalle_Factura(Id_Detalle)
+	)
+END
+
+IF OBJECT_ID('Activity.Inscripto_Act_Extra') IS NULL
+BEGIN 
+	CREATE TABLE Activity.Inscripto_Act_Extra
+	(
+		Id_Act_Extra INT,
+		Fecha DATE,
+		Id_Persona INT,
+		Id_Detalle INT
+		CONSTRAINT FK_InscrExt_ActExt
+		FOREIGN KEY (Id_Act_Extra) REFERENCES Activity.Actividad_Extra(Id_Actividad_Extra),
+		CONSTRAINT FK_InscrExt_Persona
+		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona),
+		CONSTRAINT FK_InscrExt_Detalle
+		FOREIGN KEY (Id_Detalle) REFERENCES Payment.Detalle_Factura(Id_Detalle),
+	)
+END
+
+-- Tablas Pertenecientes al Schema Groups --
+
+IF OBJECT_ID('Groups.Categoria') IS NULL
+BEGIN 
+	CREATE TABLE Groups.Categoria
+	(
+		Id_Categoria INT PRIMARY KEY,
+		EdadMin INT,
+		EdadMax INT,
+		Descr VARCHAR(50),
+		Costo DECIMAL
+	)
+END
+
+IF OBJECT_ID('Groups.Grupo_Familiar') IS NULL
+BEGIN 
+	CREATE TABLE Groups.Grupo_Familiar
+	(
+		Id_Grupo_Familiar INT IDENTITY(1,1) PRIMARY KEY,
+		Nombre_Familia VARCHAR(50)
+	)
+END
+
+IF OBJECT_ID('Groups.Miembro_Familia') IS NULL
+BEGIN 
+	CREATE TABLE Groups.Miembro_Familia
+	(
+		Id_Socio INT, 
+		Id_Familia INT
+		CONSTRAINT FK_Familia_Socio
+		FOREIGN KEY (Id_Socio) REFERENCES Person.Socio(Id_Socio),
+		CONSTRAINT FK_Socio_Familia
+		FOREIGN KEY (Id_Familia) REFERENCES Groups.Grupo_Familiar(Id_Grupo_Familiar)
+	)
+END
+
+-- Tablas Pertenecientes al Schema Jornada --
+
+IF OBJECT_ID('Jornada.Jornada') IS NULL
+BEGIN
+	CREATE TABLE Jornada.Jornada
+	(
+		Fecha DATE PRIMARY KEY,
+		Lluvia Integer,
+		MM Decimal
+	)
+END
+
+-- Agregamos FK que no se pudieron agregar al momento de crear las tablas --
+
+IF OBJECT_ID('Person.Socio') IS NOT NULL
+BEGIN
+	IF OBJECT_ID('FK_Socio_Categoria','F') IS NULL
+	BEGIN 
+		ALTER TABLE Person.Socio 
+		ADD CONSTRAINT FK_Socio_Categoria
+		FOREIGN KEY (Id_Categoria) REFERENCES Groups.Categoria(Id_Categoria)
+	END
+END
+
+IF OBJECT_ID('Payment.Detalle_Factura') IS NOT NULL
+BEGIN
+	IF OBJECT_ID('FK_Detalle_Familia','F') IS NULL
+	BEGIN 
+		ALTER TABLE Payment.Detalle_Factura 
+		ADD CONSTRAINT FK_Detalle_Familia
+		FOREIGN KEY (Id_Familia) REFERENCES Groups.Grupo_Familiar(Id_Grupo_Familiar)
+	END
+END
+
+IF OBJECT_ID('Activity.Horario_Actividad') IS NOT NULL
+BEGIN
+	IF OBJECT_ID('FK_Horario_Categoria','F') IS NULL
+	BEGIN 
+		ALTER TABLE Activity.Horario_Actividad 
+		ADD CONSTRAINT FK_Horario_Categoria
+		FOREIGN KEY (Id_Categoria) REFERENCES Groups.Categoria(Id_Categoria)
+	END
+END
+
+IF OBJECT_ID('Activity.Inscripto_Act_Extra') IS NOT NULL
+BEGIN 
+	IF OBJECT_ID('Activity.Inscripto_Act_Extra','F') IS NULL
+	BEGIN 
+		ALTER TABLE Activity.Inscripto_Act_Extra
+		ADD CONSTRAINT FK_InscrExt_Jornada
+		FOREIGN KEY (FECHA) REFERENCES Jornada.Jornada(Fecha)
+	END
 END
