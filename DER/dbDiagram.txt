@@ -9,7 +9,8 @@ Table Usuario {
 
 Table Rol{
   Id_Rol Integer [primary key]
-  Nombre String
+  Nombre_Rol String
+  Desc_Rol String
 }
 
 Table Persona {
@@ -34,7 +35,7 @@ Table Socio {
 Table Tutor {
   Id_Tutor Integer [primary key]
   Id_Persona Integer [not null]
-  Parentesco Integer [not null]
+  Parentesco String [not null]
 }
 
 Table Factura{
