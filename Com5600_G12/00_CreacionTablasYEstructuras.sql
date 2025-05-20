@@ -51,6 +51,7 @@ END
 ------------------ CREACIÓN DE TABLAS -------------------
 -- Cree las entidades y relaciones. Incluya restricciones y claves --
 
+-- Tablas Pertenencientes al Schema Person --
 IF OBJECT_ID('Person.Persona', 'U') IS NULL
 BEGIN
 	CREATE TABLE Person.Persona
@@ -69,7 +70,7 @@ BEGIN
 	CREATE TABLE Person.Tutor
 	(
 		Id_Tutor INT IDENTITY(1,1) PRIMARY KEY,
-		Id_Persona INT NOT NULL,
+		Id_Persona INT UNIQUE NOT NULL,
 		Parentesco VARCHAR (20),
 		CONSTRAINT FK_Tutor_Persona
 		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona)
@@ -81,7 +82,7 @@ BEGIN
 	CREATE TABLE Person.Socio
 	(
 		Id_Socio INT IDENTITY(1,1) PRIMARY KEY,
-		Id_Persona INT NOT NULL,
+		Id_Persona INT UNIQUE NOT NULL,
 		Id_Categoria INT NOT NULL,
 		Id_Tutor INT,
 		Telefono_Emergencia VARCHAR(15),
@@ -113,7 +114,7 @@ BEGIN
 	(
 		Id_Usuario INT IDENTITY(1,1) PRIMARY KEY,
 		Id_Rol INT NOT NULL,
-		Id_Persona INT NOT NULL,
+		Id_Persona INT UNIQUE NOT NULL,
 		Nombre_Usuario VARCHAR(30),
 		Contraseña VARCHAR(25),
 		Vigencia_Contraseña DATE,
@@ -121,6 +122,41 @@ BEGIN
 		FOREIGN KEY (Id_Rol) REFERENCES Person.Rol(Id_Rol),
 		CONSTRAINT FK_Usuario_Persona
 		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona),
-
 	);
 END
+
+-- Tablas Pertenecientes al Schema Payment --
+
+IF OBJECT_ID('Payment.Factura') IS NULL
+BEGIN 
+	CREATE TABLE Payment.Factura
+	(
+		Id_Factura INT IDENTITY(1,1) PRIMARY KEY,
+		Id_Persona INT NOT NULL,
+		Fecha_Emision DATE,
+		Fecha_Vencimiento DATE,
+		Segundo_Vencimiento DATE,
+		Total Decimal,
+		Estado_Factura Varchar(10)
+		CONSTRAINT FK_Factura_Persona
+		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona)
+
+	)
+END 
+
+IF OBJECT_ID('Payment.') IS NULL
+BEGIN 
+	CREATE TABLE Payment.Factura
+	(
+		Id_Factura INT IDENTITY(1,1) PRIMARY KEY,
+		Id_Persona INT NOT NULL,
+		Fecha_Emision DATE,
+		Fecha_Vencimiento DATE,
+		Segundo_Vencimiento DATE,
+		Total Decimal,
+		Estado_Factura Varchar(10)
+		CONSTRAINT FK_Factura_Persona
+
+	)
+END 
+
