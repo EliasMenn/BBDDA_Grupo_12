@@ -1,0 +1,173 @@
+Table Usuario {
+  Id_Usuario integer [primary key]
+  Id_Rol Integer
+  Id_Persona Integer
+  Nombre_Usuario String 
+  Contraseña String
+  Vigencia_Contraseña Date
+}
+
+Table Rol{
+  Id_Rol Integer [primary key]
+  Nombre String
+}
+
+Table Persona {
+  Id_Persona Integer [primary key]
+  Nombre String [not null]
+  Apellido String [not null]
+  Email String [not null]
+  Fecha_Nacimiento Date [not null]
+  Telefono_Contacto String [not null]
+}
+
+Table Socio {
+  Id_Socio integer [primary key]
+  Id_Persona Integer [not null]
+  Id_Categoria Integer [not null]
+  Telefono_Emergencia String [not null]
+  Obra_Social String 
+  Nro_Obra_Social String 
+  Id_Tutor integer
+}
+
+Table Tutor {
+  Id_Tutor Integer [primary key]
+  Id_Persona Integer [not null]
+  Parentesco Integer [not null]
+}
+
+Table Factura{
+ Id_Factura Integer [primary key]
+ Id_Persona Integer [not null]
+ Fecha_Emision Date [not null]
+ Fecha_Vencimiento Date [not null]
+ Segundo_Vencimiento Date [not null]
+ Total Decimal [not null]
+ Estado_Factura String [not null]
+}
+
+Table Detalle_Factura {
+  Id_Detalle Integer [primary key]
+  Id_Factura Integer  [primary key]
+  Concepto String [not null]
+  Monto Decimal [not null]
+}
+
+Table MedioPago {
+  Id_Socio Integer [primary key]
+  Id_MedioPago Integer [not null]
+  Id_TipoMedio Integer [not null]
+  Datos_Medio TEXT 
+
+}
+
+Table Morosidad {
+  Id_Factura Integer [primary key]
+  Segundo_Vencimiento Date [not null]
+  Recargo Decimal [not null]
+  Bloqueado Bool [not null]
+  Fecha_Bloqueo Date [not null]
+}
+
+Table Tipo_Medio {
+  Id_TipoMedio Integer [primary key]
+  Nombre_Medio String [not null]
+}
+
+Table Pago {
+  Id_Pago Integer [primary key]
+  Id_Factura Integer [not null]
+  Fecha_Pago Date 
+  Medio_Pago Integer [not null]
+  Monto Decimal [not null]
+  Reembolso Bool [not null]
+  CantidadPago Decimal [not null]
+  Pago_Cuenta Bool [not null]
+}
+
+Table Cuenta{
+  Id_Persona integer [primary key]
+  SaldoCuenta Decimal [not null]
+}
+
+Table Jornada{
+  Fecha Date [primary key]
+  Lluvia Bool
+  MM Decimal
+}
+
+Table Actividad{
+  Id_Actividad integer [primary key]
+  Nombre String
+  Desc String
+  Costo Decimal
+}
+
+Table Horario_Actividad{ 
+  Id_Horario Integer [primary key]
+  Id_Actividad integer
+  Id_Categoria Integer 
+  Horario Time
+  Dias String
+}
+
+Table Inscripto_Actividad{
+  Id_Horario Integer
+  Id_Socio Integer
+  } 
+
+Table Categoria{
+  Id_Categoria Integer [primary key]
+  EdadMin integer
+  EdadMax integer
+  Desc String
+  Costo Decimal
+}
+
+Table Actividad_Extra{
+  Id_Actividad_Extra Integer [primary key]
+  Nombre String
+  Desc String
+  Costo_Soc Decimal
+  Costo Decimal
+}
+
+Table Inscripto_Act_Extra{
+  Id_Actividad_Extra integer
+  Fecha Date
+  Id_Persona Integer
+}
+
+Table Grupo_Familiar{
+  Id_Grupo_Familiar Integer [primary key]
+  Nombre_Familia String
+}
+
+Table Miembro_Familia{
+  Id_Socio Integer 
+  Id_Familia Integer
+}
+ref: Persona.Id_Persona - Socio.Id_Persona
+ref: Persona.Id_Persona - Tutor.Id_Persona
+ref: Tutor.Id_Tutor < Socio.Id_Tutor
+ref: Persona.Id_Persona < Factura.Id_Persona
+ref: Socio.Id_Socio < MedioPago.Id_Socio
+ref: Tipo_Medio.Id_TipoMedio > MedioPago.Id_TipoMedio 
+ref: Factura.Id_Factura - Detalle_Factura.Id_Factura
+ref: Factura.Id_Factura - Morosidad.Id_Factura
+ref: Factura.Id_Factura - Pago.Id_Factura
+ref: MedioPago.Id_MedioPago < Pago.Medio_Pago
+ref: Rol.Id_Rol - Usuario.Id_Rol
+ref: Persona.Id_Persona - Usuario.Id_Persona
+ref: Persona.Id_Persona - Cuenta.Id_Persona
+ref: Actividad.Id_Actividad < Horario_Actividad.Id_Actividad
+ref: Horario_Actividad.Id_Horario > Inscripto_Actividad.Id_Horario
+ref: Socio.Id_Socio < Inscripto_Actividad.Id_Socio
+ref: Categoria.Id_Categoria < Socio.Id_Categoria
+ref: Categoria.Id_Categoria < Horario_Actividad.Id_Categoria
+ref: Actividad_Extra.Id_Actividad_Extra < Inscripto_Act_Extra.Id_Actividad_Extra
+ref: Persona.Id_Persona < Inscripto_Act_Extra.Id_Persona
+ref: Jornada.Fecha < Inscripto_Act_Extra.Fecha
+ref: Socio.Id_Socio < Miembro_Familia.Id_Socio
+ref: Grupo_Familiar.Id_Grupo_Familiar < Miembro_Familia.Id_Familia
