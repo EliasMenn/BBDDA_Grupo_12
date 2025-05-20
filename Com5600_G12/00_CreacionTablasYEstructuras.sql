@@ -144,19 +144,86 @@ BEGIN
 	)
 END 
 
-IF OBJECT_ID('Payment.') IS NULL
+IF OBJECT_ID('Payment.Detalle_Factura') IS NULL
 BEGIN 
-	CREATE TABLE Payment.Factura
+	CREATE TABLE Payment.Detalle_Factura
 	(
-		Id_Factura INT IDENTITY(1,1) PRIMARY KEY,
-		Id_Persona INT NOT NULL,
-		Fecha_Emision DATE,
-		Fecha_Vencimiento DATE,
-		Segundo_Vencimiento DATE,
-		Total Decimal,
-		Estado_Factura Varchar(10)
-		CONSTRAINT FK_Factura_Persona
-
+		Id_Detalle INT IDENTITY(1,1) PRIMARY KEY,
+		Id_Factura INT NOT NULL,
+		Concepto Varchar(50),
+		Monto Decimal,
+		Descuento_Familiar INT,
+		Id_Familia INT,
+		Descuento_Act INT,
+		Descuento_Lluvia INT,
+		CONSTRAINT FK_Detalle_Factura
+		FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura)
+		/*CONSTRAINT FK_Detalle_Familia
+		FOREIGN KEY (Id_Familia) REFERENCES Groups.Grupo_Familiar(Id_Grupo_Familiar)*/
 	)
 END 
 
+IF OBJECT_ID('Payment.Morosidad') IS NULL
+BEGIN
+	CREATE TABLE Payment.Morosidad
+	(
+		Id_Factura INT PRIMARY KEY,
+		Segundo_Vencimiento DATE,
+		Recargo DECIMAL,
+		Bloqueado INTEGER,
+		Fecha_Bloqueo DATE
+		CONSTRAINT FK_Morosidad_Factura
+		FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura)
+	)
+END
+
+IF OBJECT_ID('Payment.Pago') IS NULL
+BEGIN
+	CREATE TABLE Payment.Pago
+	(
+		Id_Pago INT IDENTITY (1,1) PRIMARY KEY,
+		Id_Factura INT,
+		Fecha_Pago DATE,
+		Medio_Pago DATE,
+		Monto DECIMAL,
+		Reembolso INT,
+		CAntidadPago DECIMAL,
+		Pago_Cuenta INT
+		CONSTRAINT FK_Pago_Factura
+		FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura)
+	)
+END
+
+IF OBJECT_ID('Payment.TipoMedio') IS NULL
+BEGIN
+	CREATE TABLE Payment.TipoMedio
+	(
+		Id_TipoMedio INT IDENTITY (1,1) PRIMARY KEY,
+		Nombre_Medio VARCHAR(25),
+		Datos_Necesarios VARCHAR(MAX)
+	)
+END
+
+IF OBJECT_ID('Payment.Medio_Pago') IS NULL
+BEGIN
+	CREATE TABLE Payment.Medio_Pago
+	(
+		Id_Medio_Pago INT IDENTITY (1,1) PRIMARY KEY,
+		Id_Socio INT,
+		Id_TipoMedio INT,
+		Datos_Medio VARCHAR(MAX)
+		CONSTRAINT FK_Medio_Tipo
+		FOREIGN KEY (Id_TipoMedio) REFERENCES Payment.TipoMedio(Id_TipoMedio)
+	)
+END
+
+IF OBJECT_ID('Payment.Cuenta') IS NULL
+BEGIN 
+	CREATE TABLE Payment.Cuenta
+	(
+		Id_Persona INT PRIMARY KEY,
+		SaldoCuenta DECIMAL
+		CONSTRAINT FK_Cuenta_Persona
+		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona)
+	)
+END
