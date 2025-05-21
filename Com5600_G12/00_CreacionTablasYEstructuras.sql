@@ -181,10 +181,10 @@ BEGIN
 		Id_Pago INT IDENTITY (1,1) PRIMARY KEY,
 		Id_Factura INT,
 		Fecha_Pago DATE,
-		Medio_Pago DATE,
+		Medio_Pago VARCHAR(50),
 		Monto DECIMAL,
 		Reembolso INT,
-		CAntidadPago DECIMAL,
+		Cantidad_Pago DECIMAL,
 		Pago_Cuenta INT
 		CONSTRAINT FK_Pago_Factura
 		FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura)
