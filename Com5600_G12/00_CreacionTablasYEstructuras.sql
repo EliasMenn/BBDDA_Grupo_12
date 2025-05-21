@@ -58,10 +58,10 @@ BEGIN
 	CREATE TABLE Person.Persona
 	(
 		Id_Persona INT IDENTITY(1,1) PRIMARY KEY,
-		Nombre VARCHAR (25),
-		Apellido VARCHAR (25),
-		DNI VARCHAR (10),
-		Email VARCHAR (50),
+		Nombre VARCHAR(25),
+		Apellido VARCHAR(25),
+		DNI VARCHAR(10),
+		Email VARCHAR(50),
 		Fecha_Nacimiento DATE,
 		Telefono_Contacto VARCHAR(15)
 	);
@@ -73,7 +73,7 @@ BEGIN
 	(
 		Id_Tutor INT IDENTITY(1,1) PRIMARY KEY,
 		Id_Persona INT UNIQUE NOT NULL,
-		Parentesco VARCHAR (20),
+		Parentesco VARCHAR(20),
 		CONSTRAINT FK_Tutor_Persona
 		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona)
 	);
