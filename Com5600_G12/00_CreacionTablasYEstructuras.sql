@@ -116,8 +116,8 @@ BEGIN
 		Id_Rol INT NOT NULL,
 		Id_Persona INT UNIQUE NOT NULL,
 		Nombre_Usuario VARCHAR(30),
-		Contraseña VARCHAR(25),
-		Vigencia_Contraseña DATE,
+		Contrasenia VARBINARY(32),
+		Vigencia_Contrasenia DATE,
 		CONSTRAINT FK_Usuario_Rol
 		FOREIGN KEY (Id_Rol) REFERENCES Person.Rol(Id_Rol),
 		CONSTRAINT FK_Usuario_Persona

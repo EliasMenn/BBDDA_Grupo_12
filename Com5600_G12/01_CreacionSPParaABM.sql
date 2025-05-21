@@ -21,9 +21,9 @@ GO
 
 CREATE OR ALTER PROCEDURE Person.Agr_Persona
 	@Nombre VARCHAR (25),
-	@Apellido VARCHAR (25),
+	@Apellido VARCHAR(25),
 	@DNI VARCHAR(10),
-	@Email VARCHAR (50),
+	@Email VARCHAR(50),
 	@Fecha_Nacimiento DATE,
 	@Telefono_Contacto VARCHAR(15)
 AS
@@ -104,10 +104,10 @@ GO
 -- Para Tabla Socio --
 
 CREATE OR ALTER PROCEDURE Person.Agr_Socio
-	@Nombre VARCHAR (25),
-	@Apellido VARCHAR (25),
+	@Nombre VARCHAR(25),
+	@Apellido VARCHAR(25),
 	@DNI VARCHAR(10),
-	@Email VARCHAR (50),
+	@Email VARCHAR(50),
 	@Fecha_Nacimiento DATE,
 	@Telefono_Contacto VARCHAR(15),
 	@Telefono_Contacto_Emg VARCHAR(15),
@@ -122,25 +122,7 @@ BEGIN
 		DECLARE @Edad INT
 		DECLARE @Id INT
 
-		EXEC @Id_Persona= Person.Agr_Persona
-		@Nombre = @Nombre,
-		@Apellido = @Apellido,
-		@Email = @Email,
-		@Fecha_Nacimiento = @Fecha_Nacimiento,
-		@Telefono_Contacto = @Telefono_Contacto,
-		@DNI = @DNI
-	
-	--Verificamos que la persona no sea socio--
 
-		SELECT @Id = Id_Socio
-		FROM Person.Socio 
-		WHERE Id_Persona = @Id_Persona
-
-		IF @Id IS NOT NULL
-		BEGIN 
-			PRINT('Esta persona ya es socio');
-			RETURN @Id
-		END
 	--Verificamos todos sus demas datos--
 		IF @Telefono_Contacto_Emg ='' OR @Telefono_Contacto_Emg LIKE '%[^0-9]%' OR LEN(@Telefono_Contacto_Emg) > 50
 		BEGIN
@@ -208,6 +190,26 @@ BEGIN
 			RAISERROR('.',16,1)
 		END
 
+		EXEC @Id_Persona= Person.Agr_Persona
+		@Nombre = @Nombre,
+		@Apellido = @Apellido,
+		@Email = @Email,
+		@Fecha_Nacimiento = @Fecha_Nacimiento,
+		@Telefono_Contacto = @Telefono_Contacto,
+		@DNI = @DNI
+	
+	--Verificamos que la persona no sea socio--
+
+		SELECT @Id = Id_Socio
+		FROM Person.Socio 
+		WHERE Id_Persona = @Id_Persona
+
+		IF @Id IS NOT NULL
+		BEGIN 
+			PRINT('Esta persona ya es socio');
+			RETURN @Id
+		END
+
 	END TRY
 	BEGIN CATCH
 		IF ERROR_SEVERITY() > 10
@@ -225,10 +227,10 @@ GO
 -- Para Tabla tutor --
 
 CREATE OR ALTER PROCEDURE Person.Agr_Tutor
-	@Nombre VARCHAR (25),
-	@Apellido VARCHAR (25),
+	@Nombre VARCHAR(25),
+	@Apellido VARCHAR(25),
 	@DNI VARCHAR(10),
-	@Email VARCHAR (50),
+	@Email VARCHAR(50),
 	@Fecha_Nacimiento DATE,
 	@Telefono_Contacto VARCHAR(15),
 	@Parentesco VARCHAR(20)
@@ -237,6 +239,14 @@ BEGIN
 	BEGIN TRY
 		DECLARE @Id INT
 		DECLARE @Id_Persona INT
+
+		SET @Parentesco = Trim(@Parentesco)
+
+		IF @Parentesco = '' OR @Parentesco LIKE '%[^a-zA-Z]%' OR LEN(@Parentesco) > 25
+		BEGIN
+			PRINT('El parentesco no es valido')
+			RAISERROR('.',16,1)
+		END
 
 		EXEC @Id_Persona= Person.Agr_Persona
 		@Nombre = @Nombre,
@@ -257,10 +267,60 @@ BEGIN
 			PRINT ('Esta persona ya es tutor')
 			RETURN @Id
 		END
-		
-		IF @Parentesco = '' OR @Parentesco LIKE '%[^a-zA-Z]%' OR LEN(@Parentesco) > 25
+
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
 		BEGIN
-			PRINT('El parentesco no es valido')
+			RAISERROR('Ocurrio algo en el registro de tutor',16,1)
+			RETURN;
+		END
+	END CATCH
+	INSERT INTO Person.Tutor(Id_Persona, Parentesco)
+	VALUES (@Id_Persona, @Parentesco)
+	SET @Id = SCOPE_IDENTITY();
+	RETURN @Id
+END
+GO
+
+-- Para Tabla Rol --
+
+CREATE OR ALTER PROCEDURE Person.Agr_Rol
+	@Id_Rol INT,
+	@Nombre_Rol VARCHAR(25),
+	@Descripcion VARCHAR(50)
+AS
+BEGIN
+	BEGIN TRY
+		IF EXISTS (SELECT 1 FROM Person.Rol WHERE Id_Rol = @Id_Rol)
+		BEGIN
+			PRINT('Ya existe un rol con ese ID')
+			RAISERROR('.',16,1)
+		END
+
+		IF TRY_CONVERT(INT, @Id_Rol) IS NULL
+		BEGIN
+			PRINT('Id Invalido')
+			RAISERROR('-',16,1)
+		END
+
+		IF EXISTS (SELECT 1 FROM Person.Rol WHERE Nombre_Rol = @Nombre_Rol)
+		BEGIN
+			PRINT('Ya existe un rol con ese nombre')
+			RAISERROR('.',16,1)
+		END
+
+		SET @Nombre_Rol = TRIM(@Nombre_Rol)
+
+		IF @Nombre_Rol = '' OR @Nombre_Rol LIKE '%[^a-zA-Z ]%' OR LEN(@Nombre_Rol) > 25
+		BEGIN
+			PRINT('Nombre de rol invalido')
+			RAISERROR('.',16,1)
+		END
+
+		IF @Descripcion = '' OR @Descripcion LIKE '%[^a-zA-Z ]%' OR LEN(@Descripcion) > 25
+		BEGIN
+			PRINT('Descripcion invalida')
 			RAISERROR('.',16,1)
 		END
 
@@ -268,9 +328,73 @@ BEGIN
 	BEGIN CATCH
 		IF ERROR_SEVERITY() > 10
 		BEGIN
-			RAISERROR('Ocurrio algo en el registro de socio',16,1)
+			RAISERROR('Ocurrio algo en la creacion de rol',16,1)
 			RETURN;
 		END
 	END CATCH
-
+	INSERT INTO Person.Rol(Id_Rol,Nombre_Rol,Desc_Rol)
+	VALUES (@Id_Rol,@Nombre_Rol,@Descripcion)
 END
+GO
+
+-- Para Tabla Usuario --
+
+CREATE OR ALTER PROCEDURE Person.Agr_Usuario
+	@Id_Rol INTEGER,
+	@Id_Persona INTEGER,
+	@Nombre_Usuario VARCHAR(30),
+	@Contrasenia NVARCHAR(25)
+AS
+BEGIN
+	BEGIN TRY
+		DECLARE @ContraseniaHash VARBINARY(32)
+		DECLARE @Vigencia DATE
+		IF TRY_CONVERT(INT, @Id_Rol) IS NULL
+		BEGIN 
+			PRINT('El ID ingresado no es valido')
+			RAISERROR('.',16,1)
+		END
+		IF NOT EXISTS (SELECT 1 FROM Person.Rol WHERE Id_Rol = @Id_Rol)
+		BEGIN
+			PRINT('No existe el rol solicitado')
+			RAISERROR('.',16,1)
+		END
+		
+		IF TRY_CONVERT(INT,@Id_Persona) IS NULL
+		BEGIN 
+			PRINT('El Identificador de persona no es valido')
+			RAISERROR('.',16,1)
+		END
+		IF NOT EXISTS (SELECT 1 FROM Person.Persona WHERE Id_Persona = @Id_Persona)
+		BEGIN
+			PRINT('La persona ingresada no esta registrada')
+			RAISERROR('.',16,1)
+		END
+
+		SET @Nombre_Usuario = TRIM(@Nombre_Usuario)
+		IF @Nombre_Usuario = '' OR LEN(@Nombre_Usuario) > 30
+		BEGIN 
+			PRINT('El nombre de usuario no es valido')
+			RAISERROR('.',16,1)
+		END
+
+		SET @Contrasenia = TRIM(@Contrasenia)
+		IF @Contrasenia = '' OR @Contrasenia NOT LIKE '%[A-Z]%' OR @Contrasenia NOT LIKE '%[a-z]%' OR @Contrasenia NOT LIKE '%[0-9]%'
+		BEGIN
+			PRINT('La contraseña debe contener un caracter en mayuscula, uno en minuscula y un numero')
+			RAISERROR('.',16,1)
+		END 
+		SET @Vigencia = DATEADD(YEAR,1,GETDATE())
+		SET @ContraseniaHash = HASHBYTES('SHA2_256', CONVERT(NVARCHAR(100), @Contrasenia))
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo en la creacion de Usuario',16,1)
+			RETURN;
+		END
+	END CATCH
+	INSERT INTO Person.Usuario (Id_Rol, Id_Persona,Nombre_Usuario,Contrasenia,Vigencia_Contrasenia)
+	VALUES (@Id_Rol, @Id_Persona, @Nombre_Usuario, @ContraseniaHash, @Vigencia)
+END
+GO
