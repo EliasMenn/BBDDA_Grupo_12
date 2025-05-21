@@ -20,10 +20,10 @@ GO
 -- Para Tabla Persona --
 
 CREATE OR ALTER PROCEDURE Person.Agr_Persona
-	@Nombre VARCHAR (25),
-	@Apellido VARCHAR (25),
+	@Nombre VARCHAR(25),
+	@Apellido VARCHAR(25),
 	@DNI VARCHAR(10),
-	@Email VARCHAR (50),
+	@Email VARCHAR(50),
 	@Fecha_Nacimiento DATE,
 	@Telefono_Contacto VARCHAR(15)
 AS
