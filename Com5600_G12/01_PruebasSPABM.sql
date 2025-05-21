@@ -1,4 +1,14 @@
 
+------------------------------------------------------------------
+--MATERIA: BASES DE DATOS APLICADA
+--GRUPO: 12
+--Melissari, Pedro 46912033
+--Del Valle, Federico
+--Medina, Juan
+--Mennella, Elias Damian 46357008
+----------------------------------------------------------------
+
+-- Prueba de los Stored Procedure --
 USE master
 
 USE Com5600_G12
