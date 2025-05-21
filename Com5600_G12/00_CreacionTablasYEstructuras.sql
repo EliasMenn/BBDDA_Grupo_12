@@ -120,7 +120,7 @@ BEGIN
 		CONSTRAINT FK_Usuario_Rol
 		FOREIGN KEY (Id_Rol) REFERENCES Person.Rol(Id_Rol),
 		CONSTRAINT FK_Usuario_Persona
-		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona),
+		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona)
 	);
 END
 
