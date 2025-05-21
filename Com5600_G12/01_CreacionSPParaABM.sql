@@ -20,7 +20,11 @@ GO
 -- Para Tabla Persona --
 
 CREATE OR ALTER PROCEDURE Person.Agr_Persona
+<<<<<<< HEAD
 	@Nombre VARCHAR (25),
+=======
+	@Nombre VARCHAR(25),
+>>>>>>> bd12228d6f90a8f890f7eca8e30817e0378c1fb7
 	@Apellido VARCHAR(25),
 	@DNI VARCHAR(10),
 	@Email VARCHAR(50),
