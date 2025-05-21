@@ -60,6 +60,7 @@ BEGIN
 		Id_Persona INT IDENTITY(1,1) PRIMARY KEY,
 		Nombre VARCHAR (25),
 		Apellido VARCHAR (25),
+		DNI VARCHAR (10),
 		Email VARCHAR (50),
 		Fecha_Nacimiento DATE,
 		Telefono_Contacto VARCHAR(15)
@@ -347,19 +348,29 @@ END
 
 -- Agregamos FK que no se pudieron agregar al momento de crear las tablas --
 
-IF OBJECT_ID('Person.Socio') IS NOT NULL
+IF OBJECT_ID('Person.Socio','U') IS NOT NULL
 BEGIN
-	IF OBJECT_ID('FK_Socio_Categoria','F') IS NULL
-	BEGIN 
-		ALTER TABLE Person.Socio 
+	IF NOT EXISTS(
+		SELECT 1
+		FROM sys.foreign_keys
+		WHERE name = 'FK_Socio_Categoria'
+		AND parent_object_id = OBJECT_ID('Person.Socio','U')
+	)
+	BEGIN
+		ALTER TABLE Person.Socio
 		ADD CONSTRAINT FK_Socio_Categoria
 		FOREIGN KEY (Id_Categoria) REFERENCES Groups.Categoria(Id_Categoria)
 	END
 END
 
-IF OBJECT_ID('Payment.Detalle_Factura') IS NOT NULL
+IF OBJECT_ID('Payment.Detalle_Factura','U') IS NOT NULL
 BEGIN
-	IF OBJECT_ID('FK_Detalle_Familia','F') IS NULL
+	IF NOT EXISTS(
+		SELECT 1
+		FROM sys.foreign_keys
+		WHERE name = 'FK_Detalle_Familia'
+		AND parent_object_id = OBJECT_ID('Payment.Detalle_Factura','U')
+	)
 	BEGIN 
 		ALTER TABLE Payment.Detalle_Factura 
 		ADD CONSTRAINT FK_Detalle_Familia
@@ -367,9 +378,14 @@ BEGIN
 	END
 END
 
-IF OBJECT_ID('Activity.Horario_Actividad') IS NOT NULL
+IF OBJECT_ID('Activity.Horario_Actividad','U') IS NOT NULL
 BEGIN
-	IF OBJECT_ID('FK_Horario_Categoria','F') IS NULL
+	IF NOT EXISTS(
+		SELECT 1
+		FROM sys.foreign_keys
+		WHERE name = 'FK_Horario_Categoria'
+		AND parent_object_id = OBJECT_ID('Activity.Horario_Actividad','U')
+	)
 	BEGIN 
 		ALTER TABLE Activity.Horario_Actividad 
 		ADD CONSTRAINT FK_Horario_Categoria
@@ -377,9 +393,14 @@ BEGIN
 	END
 END
 
-IF OBJECT_ID('Activity.Inscripto_Act_Extra') IS NOT NULL
+IF OBJECT_ID('Activity.Inscripto_Act_Extra','U') IS NOT NULL
 BEGIN 
-	IF OBJECT_ID('Activity.Inscripto_Act_Extra','F') IS NULL
+	IF NOT EXISTS(
+		SELECT 1
+		FROM sys.foreign_keys
+		WHERE name = 'FK_InscrExt_Jornada'
+		AND parent_object_id = OBJECT_ID('Activity.Inscripto_Act_Extra','U')
+	)
 	BEGIN 
 		ALTER TABLE Activity.Inscripto_Act_Extra
 		ADD CONSTRAINT FK_InscrExt_Jornada

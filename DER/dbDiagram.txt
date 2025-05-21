@@ -17,6 +17,7 @@ Table Persona {
   Id_Persona Integer [primary key]
   Nombre String [not null]
   Apellido String [not null]
+  DNI String [not null]
   Email String [not null]
   Fecha_Nacimiento Date [not null]
   Telefono_Contacto String [not null]
