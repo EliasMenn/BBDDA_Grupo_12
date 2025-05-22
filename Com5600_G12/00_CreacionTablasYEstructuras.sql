@@ -9,8 +9,19 @@
 
 ------------------ CREACIÓN DE BBDD -------------------
 
-/*USE Master
-  DROP DATABASE COM5600_G12*/
+-- Cambiar al contexto master
+/* USE master;
+GO
+
+-- Forzar modo SINGLE_USER y cerrar todas las conexiones
+ALTER DATABASE COM5600_G12
+SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+GO
+
+-- Eliminar la base
+DROP DATABASE COM5600_G12;
+GO */
+
 
 IF DB_ID('COM5600_G12') IS NULL
     CREATE DATABASE COM5600_G12 COLLATE Latin1_General_CI_AS;
@@ -144,23 +155,6 @@ BEGIN
 	)
 END 
 
-IF OBJECT_ID('Payment.Detalle_Factura') IS NULL
-BEGIN 
-	CREATE TABLE Payment.Detalle_Factura
-	(
-		Id_Factura INT PRIMARY KEY,
-		Id_Detalle INT,
-		Concepto Varchar(50),
-		Monto Decimal,
-		Descuento_Familiar INT,
-		Id_Familia INT,
-		Descuento_Act INT,
-		Descuento_Lluvia INT,
-		CONSTRAINT FK_Detalle_Factura
-		FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura)
-	)
-END 
-
 IF OBJECT_ID('Payment.Referencia_Detalle') IS NULL
 BEGIN 
 	CREATE TABLE Payment.Referencia_Detalle
@@ -168,9 +162,27 @@ BEGIN
 		Referencia INT,		--Referencias arrancando en 100 = Categoria, 200 = Actividad, 300 = Actividad_Extra
 		Tipo_Referencia INT, -- Lo utilizamos para saber donde buscar, 1 tabla categorias, 2 tabla actividad, 3 tabla actividad extra
 		Descripcion VARCHAR(50),
-		Id_Detalle INT IDENTITY(1,1)
+		Id_Detalle INT IDENTITY(1,1) PRIMARY KEY  -- Clave primaria necesaria para FK
 	)
 END 
+
+IF OBJECT_ID('Payment.Detalle_Factura') IS NULL
+BEGIN 
+	CREATE TABLE Payment.Detalle_Factura
+	(
+		Id_Factura INT,
+		Id_Detalle INT,
+		Concepto VARCHAR(50),
+		Monto DECIMAL,
+		Descuento_Familiar INT,
+		Id_Familia INT,
+		Descuento_Act INT,
+		Descuento_Lluvia INT,
+		CONSTRAINT PK_Detalle_Factura PRIMARY KEY (Id_Factura, Id_Detalle),
+		CONSTRAINT FK_Detalle_Factura FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura),
+		CONSTRAINT FK_Detalle_Referencia FOREIGN KEY (Id_Detalle) REFERENCES Payment.Referencia_Detalle(Id_Detalle)
+	)
+END
 
 IF OBJECT_ID('Payment.Morosidad') IS NULL
 BEGIN

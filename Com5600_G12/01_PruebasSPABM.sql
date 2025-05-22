@@ -152,17 +152,31 @@ EXEC Person.Agr_Tutor
 	@Parentesco = 'Padre'
 
 ---------------------------------------------- Para Tabla Socios ----------------------------------------------
+
+-- Carga básica de una categoría para menores
+INSERT INTO Groups.Categoria (Nombre_Cat, EdadMin, EdadMax, Descr, Costo)
+VALUES ('Infantil', 0, 12, 'Niños hasta 12 años', 1000);
+
+-- Otra categoría para adolescentes
+INSERT INTO Groups.Categoria (Nombre_Cat, EdadMin, EdadMax, Descr, Costo)
+VALUES ('Juvenil', 13, 17, 'Adolescentes', 1200);
+
+-- Otra categoría para adultos
+INSERT INTO Groups.Categoria (Nombre_Cat, EdadMin, EdadMax, Descr, Costo)
+VALUES ('Adultos', 18, 99, 'Mayores de edad', 1500);
+
+
 -- CASO CORRECTO: menor de edad con tutor válido
 EXEC Person.Agr_Socio
 	@Nombre = 'Juan',
-    @Apellido = 'Medina',
-    @Email = 'Medina@CABJ.com',
-    @Fecha_Nacimiento = '2011-6-26',
-    @Telefono_Contacto = '1122334455',
+	@Apellido = 'Medina',
+	@Email = 'Medina@CABJ.com',
+	@Fecha_Nacimiento = '2011-6-26',
+	@Telefono_Contacto = '1122334455',
 	@DNI = '46682620',
 	@Telefono_Contacto_Emg = '1122334455',
-	@Obra_Social ='N/A',
-	@Nro_Socio_Obra = 'N/A',
+	@Obra_Social ='OSDE',
+	@Nro_Socio_Obra = '1',
 	@Id_Tutor = '1' -- suponiendo que el tutor ya fue creado
 
 -- CASO CORRECTO: mayor de edad sin tutor
@@ -174,8 +188,8 @@ EXEC Person.Agr_Socio
 	@Telefono_Contacto = '1144556677',
 	@DNI = '43935693',
 	@Telefono_Contacto_Emg = '1199887766',
-	@Obra_Social = 'N/A',
-	@Nro_Socio_Obra = '',
+	@Obra_Social = 'SWISS MEDICAL',
+	@Nro_Socio_Obra = '1',
 	@Id_Tutor = NULL
 
 -- CASO ERROR: menor sin tutor
@@ -203,3 +217,225 @@ EXEC Person.Agr_Socio
 	@Obra_Social = 'OSDE',
 	@Nro_Socio_Obra = '',
 	@Id_Tutor = 1
+
+
+----------------------------------------------------------------------------------------------------------
+--------------------------------------------- SCHEMA PAYMENT ---------------------------------------------
+
+------------------------------------------- Para Tabla Factura -------------------------------------------
+
+-- CASO CORRECTO
+EXEC Payment.Agr_Factura
+    @Id_Persona = 1, -- debe existir en Person.Persona
+    @Fecha_Vencimiento = '2025-06-01',
+    @Segundo_Vencimiento = '2025-06-15',
+    @Total = 1500,
+    @Estado_Factura = 'Emitida';
+
+-- CASO ERROR: Persona inexistente
+EXEC Payment.Agr_Factura
+    @Id_Persona = 999,
+    @Fecha_Vencimiento = '2025-06-01',
+    @Segundo_Vencimiento = '2025-06-15',
+    @Total = 1500,
+    @Estado_Factura = 'Emitida';
+
+-- CASO ERROR: Total inválido
+EXEC Payment.Agr_Factura
+    @Id_Persona = 1,
+    @Fecha_Vencimiento = '2025-06-01',
+    @Segundo_Vencimiento = '2025-06-15',
+    @Total = -50,
+    @Estado_Factura = 'Emitida';
+
+------------------------------------------- Para Tabla Detalle Factura -------------------------------------------
+
+-- Carga de una familia ficticia
+INSERT INTO Groups.Grupo_Familiar (Nombre_Familia)
+VALUES ('Familia López');
+
+-- Otra familia opcional
+INSERT INTO Groups.Grupo_Familiar (Nombre_Familia)
+VALUES ('Familia Melissari');
+
+-- CASO CORRECTO
+EXEC Payment.Agr_Detalle_Factura
+    @Id_Factura = 1,
+    @Id_Detalle = 1, -- debe existir en Referencia_Detalle
+    @Concepto = 'Cuota de abril',
+    @Monto = 1200,
+    @Descuento_Familiar = 10,
+    @Id_Familia = 1,
+    @Descuento_Act = 5,
+    @Descuento_Lluvia = 0;
+
+-- CASO ERROR: Factura no existe
+EXEC Payment.Agr_Detalle_Factura
+    @Id_Factura = 999,
+	@Id_Detalle = 1, 
+    @Concepto = 'Cuota abril',
+    @Monto = 1200,
+    @Descuento_Familiar = 10,
+    @Id_Familia = 1,
+    @Descuento_Act = 5,
+    @Descuento_Lluvia = 0;
+
+-- CASO ERROR: Monto negativo
+EXEC Payment.Agr_Detalle_Factura
+    @Id_Factura = 1,
+	@Id_Detalle = 1, 
+    @Concepto = 'Cuota abril',
+    @Monto = -500,
+    @Descuento_Familiar = 10,
+    @Id_Familia = 1,
+    @Descuento_Act = 5,
+    @Descuento_Lluvia = 0;
+
+----------------------------------- Para Tabla Referencia_Detalle -------------------------------------
+
+-- CASO CORRECTO
+EXEC Payment.Agr_Referencia_Detalle
+    @Referencia = 200,
+    @Tipo_Referencia = 2,
+    @Descripcion = 'Fútbol infantil';
+
+-- CASO ERROR: Descripción vacía
+EXEC Payment.Agr_Referencia_Detalle
+    @Referencia = 200,
+    @Tipo_Referencia = 2,
+    @Descripcion = '';
+
+-- CASO ERROR: Tipo inválido
+EXEC Payment.Agr_Referencia_Detalle
+    @Referencia = 200,
+    @Tipo_Referencia = 9,
+    @Descripcion = 'Yoga adultos';
+
+------------------------------------------- Para Tabla Pago -------------------------------------------
+
+-- CASO CORRECTO
+EXEC Payment.Agr_Pago
+    @Id_Factura = 1,
+    @Medio_Pago = 'Tarjeta',
+    @Monto = 1000,
+    @Reembolso = 0,
+    @Cantidad_Pago = 1,
+    @Pago_Cuenta = 0;
+
+-- CASO ERROR: Medio de pago vacío
+EXEC Payment.Agr_Pago
+    @Id_Factura = 1,
+    @Medio_Pago = '',
+    @Monto = 1000,
+    @Reembolso = 0,
+    @Cantidad_Pago = 1,
+    @Pago_Cuenta = 0;
+
+-- CASO ERROR: Monto cero
+EXEC Payment.Agr_Pago
+    @Id_Factura = 1,
+    @Medio_Pago = 'Tarjeta',
+    @Monto = 0,
+    @Reembolso = 0,
+    @Cantidad_Pago = 1,
+    @Pago_Cuenta = 0;
+
+------------------------------------------- Para Tabla Morosidad -------------------------------------------
+
+-- CASO CORRECTO
+EXEC Payment.Agr_Morosidad
+    @Id_Factura = 1,
+    @Segundo_Vencimiento = '2025-06-30',
+    @Recargo = 200,
+    @Bloqueado = 1,
+    @Fecha_Bloqueo = '2025-07-01';
+
+-- CASO ERROR: Factura inexistente
+EXEC Payment.Agr_Morosidad
+    @Id_Factura = 999,
+    @Segundo_Vencimiento = '2025-06-30',
+    @Recargo = 200,
+    @Bloqueado = 1,
+    @Fecha_Bloqueo = '2025-07-01';
+
+-- CASO ERROR: Recargo negativo
+EXEC Payment.Agr_Morosidad
+    @Id_Factura = 1,
+    @Segundo_Vencimiento = '2025-06-30',
+    @Recargo = -100,
+    @Bloqueado = 1,
+    @Fecha_Bloqueo = '2025-07-01';
+
+------------------------------------------- Para Tabla Cuenta -------------------------------------------
+-- CASO CORRECTO
+EXEC Payment.Agr_Cuenta
+    @Id_Persona = 1,
+    @SaldoCuenta = 2000;
+
+-- CASO ERROR: Ya existe la cuenta
+EXEC Payment.Agr_Cuenta
+    @Id_Persona = 1,
+    @SaldoCuenta = 3000;
+
+-- CASO ERROR: Saldo negativo
+EXEC Payment.Agr_Cuenta
+    @Id_Persona = 2,
+    @SaldoCuenta = -100;
+
+
+------------------------------------------- Para Tabla Tipo Medio -------------------------------------------
+-- CASO CORRECTO
+EXEC Payment.Agr_TipoMedio
+    @Nombre_Medio = 'Débito automático',
+    @Datos_Necesarios = 'CBU, Banco, Titular';
+
+-- CASO ERROR: Nombre muy largo
+EXEC Payment.Agr_TipoMedio
+    @Nombre_Medio = 'EsteNombreEsMuyLargoParaElCampo',
+    @Datos_Necesarios = 'Tarjeta, Vto, CVV';
+
+------------------------------------------- Para Tabla Medio Pago -------------------------------------------
+-- CASO CORRECTO
+EXEC Payment.Agr_Medio_Pago
+    @Id_Socio = 1,
+    @Id_TipoMedio = 1,
+    @Datos_Medio = 'CBU:12345678';
+
+-- CASO ERROR: Socio inexistente
+EXEC Payment.Agr_Medio_Pago
+    @Id_Socio = 999,
+    @Id_TipoMedio = 1,
+    @Datos_Medio = 'CBU:12345678';
+
+-- CASO ERROR: TipoMedio inexistente
+EXEC Payment.Agr_Medio_Pago
+    @Id_Socio = 1,
+    @Id_TipoMedio = 999,
+    @Datos_Medio = 'CBU:12345678';
+
+-- CONTENIDOS TABLAS PAYMENT
+
+-- FACTURAS
+SELECT * FROM Payment.Factura;
+
+-- DETALLE DE FACTURA
+SELECT * FROM Payment.Detalle_Factura;
+
+-- REFERENCIA DETALLE
+SELECT * FROM Payment.Referencia_Detalle;
+
+-- MOROSIDAD
+SELECT * FROM Payment.Morosidad;
+
+-- PAGOS
+SELECT * FROM Payment.Pago;
+
+-- TIPO DE MEDIO DE PAGO
+SELECT * FROM Payment.TipoMedio;
+
+-- MEDIOS DE PAGO
+SELECT * FROM Payment.Medio_Pago;
+
+-- CUENTAS
+SELECT * FROM Payment.Cuenta;
+

@@ -15,7 +15,7 @@ GO
 
 ------------- CREACION DE STORE PROCEDURE -------------
 
--- ENUNCIADO: Genere store procedures para manejar la inserción, modificado, borrado de cada tabla. --
+-- ENUNCIADO: Genere store procedures para manejar la inserción de cada tabla. --
 
 -- Para Tabla Persona --
 
@@ -168,7 +168,7 @@ BEGIN
 
 		IF @Edad > '18'
 		BEGIN
-			SET @Id_Tutor = 'N/A'
+			SET @Id_Tutor = NULL
 		END
 
 		Else
@@ -225,6 +225,7 @@ BEGIN
 	RETURN @Id
 END
 GO
+
 -- Para Tabla tutor --
 
 CREATE OR ALTER PROCEDURE Person.Agr_Tutor
@@ -407,8 +408,337 @@ BEGIN
 END
 GO
 
+---------------------------- SCHEMA PAYMENT ----------------------------
+-- Agregar factura
+CREATE OR ALTER PROCEDURE Payment.Agr_Factura
+    @Id_Persona INT,
+    @Fecha_Vencimiento DATE,
+    @Segundo_Vencimiento DATE,
+    @Total DECIMAL(10,2),
+    @Estado_Factura VARCHAR(10)
+AS
+BEGIN
+    BEGIN TRY
+        -- Validaciones básicas
+        IF NOT EXISTS (SELECT 1 FROM Person.Persona WHERE Id_Persona = @Id_Persona)
+        BEGIN
+            PRINT('La persona no existe')
+            RAISERROR('.',16,1)
+        END
 
-		---- Para Tabal Groups ----
+        IF @Total <= 0
+        BEGIN
+            PRINT('El total debe ser mayor a 0')
+            RAISERROR('.',16,1)
+        END
+
+        SET @Estado_Factura = TRIM(@Estado_Factura)
+
+        IF @Estado_Factura = '' OR LEN(@Estado_Factura) > 10
+        BEGIN
+            PRINT('Estado de factura inválido')
+            RAISERROR('.',16,1)
+        END
+
+        INSERT INTO Payment.Factura (
+            Id_Persona, Fecha_Emision, Fecha_Vencimiento,
+            Segundo_Vencimiento, Total, Estado_Factura)
+        VALUES (
+            @Id_Persona, GETDATE(), @Fecha_Vencimiento,
+            @Segundo_Vencimiento, @Total, @Estado_Factura
+        )
+    END TRY
+    BEGIN CATCH
+        IF ERROR_SEVERITY() > 10
+        BEGIN
+            RAISERROR('Error al registrar la factura', 16, 1)
+        END
+    END CATCH
+END
+GO
+
+-- Agregar detalle de factura
+CREATE OR ALTER PROCEDURE Payment.Agr_Detalle_Factura
+    @Id_Factura INT,
+    @Id_Detalle INT,
+    @Concepto VARCHAR(50),
+    @Monto DECIMAL(10,2),
+    @Descuento_Familiar INT,
+    @Id_Familia INT,
+    @Descuento_Act INT,
+    @Descuento_Lluvia INT
+AS
+BEGIN
+    BEGIN TRY
+        -- Validar existencia de factura
+        IF NOT EXISTS (SELECT 1 FROM Payment.Factura WHERE Id_Factura = @Id_Factura)
+        BEGIN
+            PRINT('La factura no existe')
+            RAISERROR('.',16,1)
+        END
+
+        -- Validar existencia de referencia
+        IF NOT EXISTS (SELECT 1 FROM Payment.Referencia_Detalle WHERE Id_Detalle = @Id_Detalle)
+        BEGIN
+            PRINT('El detalle no existe en Referencia_Detalle')
+            RAISERROR('.',16,1)
+        END
+
+        -- Validar duplicado
+        IF EXISTS (SELECT 1 FROM Payment.Detalle_Factura WHERE Id_Factura = @Id_Factura AND Id_Detalle = @Id_Detalle)
+        BEGIN
+            PRINT('Ese detalle ya está registrado para esta factura')
+            RAISERROR('.',16,1)
+        END
+
+        -- Validar concepto
+        SET @Concepto = TRIM(@Concepto)
+        IF @Concepto = '' OR LEN(@Concepto) > 50
+        BEGIN
+            PRINT('Concepto inválido')
+            RAISERROR('.',16,1)
+        END
+
+        IF @Monto <= 0
+        BEGIN
+            PRINT('El monto debe ser mayor a 0')
+            RAISERROR('.',16,1)
+        END
+
+        -- Insertar
+        INSERT INTO Payment.Detalle_Factura (
+            Id_Factura, Id_Detalle, Concepto, Monto,
+            Descuento_Familiar, Id_Familia, Descuento_Act, Descuento_Lluvia)
+        VALUES (
+            @Id_Factura, @Id_Detalle, @Concepto, @Monto,
+            @Descuento_Familiar, @Id_Familia, @Descuento_Act, @Descuento_Lluvia
+        )
+    END TRY
+    BEGIN CATCH
+        IF ERROR_SEVERITY() > 10
+            RAISERROR('Error al registrar el detalle de factura', 16, 1)
+    END CATCH
+END
+GO
+
+
+-- Agregar referencia detalle
+CREATE OR ALTER PROCEDURE Payment.Agr_Referencia_Detalle
+    @Referencia INT,
+    @Tipo_Referencia INT,
+    @Descripcion VARCHAR(50)
+AS
+BEGIN
+    BEGIN TRY
+        SET @Descripcion = TRIM(@Descripcion)
+        IF @Descripcion = '' OR LEN(@Descripcion) > 50
+        BEGIN
+            PRINT('Descripción inválida')
+            RAISERROR('.',16,1)
+        END
+
+        IF @Referencia < 100 OR @Tipo_Referencia NOT IN (1, 2, 3)
+        BEGIN
+            PRINT('Referencia o tipo inválido')
+            RAISERROR('.',16,1)
+        END
+
+        INSERT INTO Payment.Referencia_Detalle (
+            Referencia, Tipo_Referencia, Descripcion)
+        VALUES (
+            @Referencia, @Tipo_Referencia, @Descripcion
+        )
+    END TRY
+    BEGIN CATCH
+        IF ERROR_SEVERITY() > 10
+            RAISERROR('Error al registrar la referencia del detalle', 16, 1)
+    END CATCH
+END
+GO
+
+
+-- Agregar morosidad
+CREATE OR ALTER PROCEDURE Payment.Agr_Morosidad
+    @Id_Factura INT,
+    @Segundo_Vencimiento DATE,
+    @Recargo DECIMAL(10,2),
+    @Bloqueado INT,
+    @Fecha_Bloqueo DATE
+AS
+BEGIN
+    BEGIN TRY
+        IF NOT EXISTS (SELECT 1 FROM Payment.Factura WHERE Id_Factura = @Id_Factura)
+        BEGIN
+            PRINT('La factura no existe')
+            RAISERROR('.',16,1)
+        END
+
+        IF @Recargo < 0
+        BEGIN
+            PRINT('El recargo no puede ser negativo')
+            RAISERROR('.',16,1)
+        END
+
+        INSERT INTO Payment.Morosidad (
+            Id_Factura, Segundo_Vencimiento, Recargo, Bloqueado, Fecha_Bloqueo)
+        VALUES (
+            @Id_Factura, @Segundo_Vencimiento, @Recargo, @Bloqueado, @Fecha_Bloqueo
+        )
+    END TRY
+    BEGIN CATCH
+        IF ERROR_SEVERITY() > 10
+            RAISERROR('Error al registrar morosidad', 16, 1)
+    END CATCH
+END
+GO
+
+-- Agregar pago
+CREATE OR ALTER PROCEDURE Payment.Agr_Pago
+    @Id_Factura INT,
+    @Medio_Pago VARCHAR(50),
+    @Monto DECIMAL(10,2),
+    @Reembolso INT,
+    @Cantidad_Pago DECIMAL(10,2),
+    @Pago_Cuenta INT
+AS
+BEGIN
+    BEGIN TRY
+        IF NOT EXISTS (SELECT 1 FROM Payment.Factura WHERE Id_Factura = @Id_Factura)
+        BEGIN
+            PRINT('La factura no existe')
+            RAISERROR('.',16,1)
+        END
+
+        SET @Medio_Pago = TRIM(@Medio_Pago)
+        IF @Medio_Pago = '' OR LEN(@Medio_Pago) > 50
+        BEGIN
+            PRINT('Medio de pago inválido')
+            RAISERROR('.',16,1)
+        END
+
+        IF @Monto <= 0 OR @Cantidad_Pago <= 0
+        BEGIN
+            PRINT('El monto y la cantidad deben ser mayores a 0')
+            RAISERROR('.',16,1)
+        END
+
+        INSERT INTO Payment.Pago (
+            Id_Factura, Fecha_Pago, Medio_Pago, Monto,
+            Reembolso, Cantidad_Pago, Pago_Cuenta)
+        VALUES (
+            @Id_Factura, GETDATE(), @Medio_Pago, @Monto,
+            @Reembolso, @Cantidad_Pago, @Pago_Cuenta
+        )
+    END TRY
+    BEGIN CATCH
+        IF ERROR_SEVERITY() > 10
+            RAISERROR('Error al registrar el pago', 16, 1)
+    END CATCH
+END
+GO
+
+-- Agregar tipo medio
+CREATE OR ALTER PROCEDURE Payment.Agr_TipoMedio
+    @Nombre_Medio VARCHAR(25),
+    @Datos_Necesarios VARCHAR(MAX)
+AS
+BEGIN
+    BEGIN TRY
+        SET @Nombre_Medio = TRIM(@Nombre_Medio)
+        IF @Nombre_Medio = '' OR LEN(@Nombre_Medio) > 25
+        BEGIN
+            PRINT('Nombre de medio inválido')
+            RAISERROR('.',16,1)
+        END
+
+        INSERT INTO Payment.TipoMedio (
+            Nombre_Medio, Datos_Necesarios)
+        VALUES (
+            @Nombre_Medio, @Datos_Necesarios
+        )
+    END TRY
+    BEGIN CATCH
+        IF ERROR_SEVERITY() > 10
+            RAISERROR('Error al registrar el tipo de medio de pago', 16, 1)
+    END CATCH
+END
+GO
+
+-- Agregar medio pago
+CREATE OR ALTER PROCEDURE Payment.Agr_Medio_Pago
+    @Id_Socio INT,
+    @Id_TipoMedio INT,
+    @Datos_Medio VARCHAR(MAX)
+AS
+BEGIN
+    BEGIN TRY
+        IF NOT EXISTS (SELECT 1 FROM Person.Persona WHERE Id_Persona = @Id_Socio)
+        BEGIN
+            PRINT('El socio no existe')
+            RAISERROR('.',16,1)
+        END
+
+        IF NOT EXISTS (SELECT 1 FROM Payment.TipoMedio WHERE Id_TipoMedio = @Id_TipoMedio)
+        BEGIN
+            PRINT('El tipo de medio no existe')
+            RAISERROR('.',16,1)
+        END
+
+        INSERT INTO Payment.Medio_Pago (
+            Id_Socio, Id_TipoMedio, Datos_Medio)
+        VALUES (
+            @Id_Socio, @Id_TipoMedio, @Datos_Medio
+        )
+    END TRY
+    BEGIN CATCH
+        IF ERROR_SEVERITY() > 10
+            RAISERROR('Error al registrar medio de pago', 16, 1)
+    END CATCH
+END
+GO
+
+-- Agregar cuenta
+CREATE OR ALTER PROCEDURE Payment.Agr_Cuenta
+    @Id_Persona INT,
+    @SaldoCuenta DECIMAL(10,2)
+AS
+BEGIN
+    BEGIN TRY
+        IF NOT EXISTS (SELECT 1 FROM Person.Persona WHERE Id_Persona = @Id_Persona)
+        BEGIN
+            PRINT('La persona no existe')
+            RAISERROR('.',16,1)
+        END
+
+        IF EXISTS (SELECT 1 FROM Payment.Cuenta WHERE Id_Persona = @Id_Persona)
+        BEGIN
+            PRINT('La cuenta ya existe para esta persona')
+            RAISERROR('.',16,1)
+        END
+
+        IF @SaldoCuenta < 0
+        BEGIN
+            PRINT('El saldo no puede ser negativo')
+            RAISERROR('.',16,1)
+        END
+
+        INSERT INTO Payment.Cuenta (
+            Id_Persona, SaldoCuenta)
+        VALUES (
+            @Id_Persona, @SaldoCuenta
+        )
+    END TRY
+    BEGIN CATCH
+        IF ERROR_SEVERITY() > 10
+            RAISERROR('Error al registrar la cuenta', 16, 1)
+    END CATCH
+END
+GO
+
+---------------------------------------------------------------------------------------------------------------
+---------------------------- SCHEMA GROUPS ----------------------------
+
+---- Para Tabla Miembro Familia ----
 CREATE OR ALTER PROCEDURE Groups.Agr_Miembro_Familia
 	@Id_Socio INT,
 	@Id_Grupo INT
@@ -563,6 +893,7 @@ BEGIN
 	END CATCH
 END
 GO
+
  -- Para la tabla Actividad --
 CREATE OR ALTER PROCEDURE Activity.Agr_Actividad
 	@Nombre_Actividad VARCHAR(50),
@@ -908,37 +1239,39 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE Payment.Agr_Referencia_Detalle
-	@Referencia INTEGER,
-	@Descripcion VARCHAR(50)
+    @Referencia INT,
+    @Tipo_Referencia INT,
+    @Descripcion VARCHAR(50)
 AS
 BEGIN
-	BEGIN TRY
-		DECLARE @Tipo INTEGER
-		IF @Referencia > 400 OR @Referencia < 100
-		BEGIN 
-			PRINT('El valor de referencia no es valido')
-			RAISERROR('El valor de referencia no es valido',16,1)
-		END 
-		IF @Referencia > 300
-		BEGIN
-			SET @Tipo = 3
-		END
-		IF @Referencia < 200
-		BEGIN
-			SET @Tipo = 1
-		END
-		ELSE
-		BEGIN
-			SET @Tipo = 2
-		END
-	END TRY
-	BEGIN CATCH
-		IF ERROR_SEVERITY() > 10
-		BEGIN
-			RAISERROR('Ocurrio algo en la creacion de detalle',16,1)
-			RETURN;
-		END
-	END CATCH
-	INSERT INTO Payment.Referencia_Detalle (Referencia, Tipo_Referencia ,Descripcion)
-	VALUES (@Referencia, @Tipo, @Descripcion)
+    BEGIN TRY
+        SET @Descripcion = TRIM(@Descripcion)
+
+        IF @Descripcion = '' OR LEN(@Descripcion) > 50
+        BEGIN
+            PRINT('Descripción inválida')
+            RAISERROR('.', 16, 1)
+        END
+
+        IF @Referencia < 100
+        BEGIN
+            PRINT('La referencia debe ser mayor o igual a 100')
+            RAISERROR('.', 16, 1)
+        END
+
+        IF @Tipo_Referencia NOT IN (1, 2, 3)
+        BEGIN
+            PRINT('Tipo de referencia inválido (debe ser 1, 2 o 3)')
+            RAISERROR('.', 16, 1)
+        END
+
+        INSERT INTO Payment.Referencia_Detalle (Referencia, Tipo_Referencia, Descripcion)
+        VALUES (@Referencia, @Tipo_Referencia, @Descripcion)
+    END TRY
+    BEGIN CATCH
+        IF ERROR_SEVERITY() > 10
+            RAISERROR('Error al registrar la referencia del detalle', 16, 1)
+    END CATCH
 END
+GO
+
