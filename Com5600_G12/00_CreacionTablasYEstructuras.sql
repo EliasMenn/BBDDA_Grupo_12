@@ -166,8 +166,9 @@ BEGIN
 	CREATE TABLE Payment.Referencia_Detalle
 	(
 		Referencia INT,		--Referencias arrancando en 100 = Categoria, 200 = Actividad, 300 = Actividad_Extra
+		Tipo_Referencia INT, -- Lo utilizamos para saber donde buscar, 1 tabla categorias, 2 tabla actividad, 3 tabla actividad extra
 		Descripcion VARCHAR(50),
-		Id_Detalle INT
+		Id_Detalle INT IDENTITY(1,1)
 	)
 END 
 

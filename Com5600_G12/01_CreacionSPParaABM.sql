@@ -481,6 +481,7 @@ BEGIN
 			@Id_Socio = @Id_Socio,
 			@Id_Grupo = @Id_Grupo
 
+
 		RETURN @Id_Grupo
 	END TRY
 	BEGIN CATCH
@@ -812,4 +813,38 @@ BEGIN
 END
 GO
 
-
+CREATE OR ALTER PROCEDURE Payment.Agr_Referencia_Detalle
+	@Referencia INTEGER,
+	@Descripcion VARCHAR(50)
+AS
+BEGIN
+	BEGIN TRY
+		DECLARE @Tipo INTEGER
+		IF @Referencia > 400 OR @Referencia < 100
+		BEGIN 
+			PRINT('El valor de referencia no es valido')
+			RAISERROR('El valor de referencia no es valido',16,1)
+		END 
+		IF @Referencia > 300
+		BEGIN
+			SET @Tipo = 3
+		END
+		IF @Referencia < 200
+		BEGIN
+			SET @Tipo = 1
+		END
+		ELSE
+		BEGIN
+			SET @Tipo = 2
+		END
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo en la creacion de detalle',16,1)
+			RETURN;
+		END
+	END CATCH
+	INSERT INTO Payment.Referencia_Detalle (Referencia, Tipo_Referencia ,Descripcion)
+	VALUES (@Referencia, @Tipo, @Descripcion)
+END
