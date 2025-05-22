@@ -65,7 +65,6 @@ Table MedioPago {
   Id_MedioPago Integer [not null]
   Id_TipoMedio Integer [not null]
   Datos_Medio String 
-
 }
 
 Table Morosidad {
@@ -145,7 +144,6 @@ Table Inscripto_Act_Extra{
   Id_Actividad_Extra integer
   Fecha Date
   Id_Persona Integer
-  Id_Detalle Integer
 }
 
 Table Grupo_Familiar{
@@ -183,4 +181,3 @@ ref: Socio.Id_Socio < Miembro_Familia.Id_Socio
 ref: Grupo_Familiar.Id_Grupo_Familiar < Miembro_Familia.Id_Familia
 ref: Grupo_Familiar.Id_Grupo_Familiar < Detalle_Factura.Id_Familia
 ref: Detalle_Factura.Id_Detalle < Inscripto_Actividad.Id_Detalle
-ref: Detalle_Factura.Id_Detalle < Inscripto_Act_Extra.Id_Detalle
