@@ -407,3 +407,4 @@ BEGIN
 		FOREIGN KEY (FECHA) REFERENCES Jornada.Jornada(Fecha)
 	END
 END
+GO

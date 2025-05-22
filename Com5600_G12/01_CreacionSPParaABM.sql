@@ -502,6 +502,7 @@ EXEC Person.Agr_Tutor
 	@Telefono_Contacto = '1122334455',
 	@Parentesco = 'Padre';
 
+<<<<<<< Updated upstream
 SELECT * FROM Person.Socio
 -- Crear socio
 -- Socio mayor de edad (no necesita tutor)
@@ -521,3 +522,212 @@ EXEC Person.Agr_Socio
 EXEC Groups.Agr_GrupoFamiliar
 	@Nombre_Familia = 'Fernandez',
 	@Id_Socio = @Id_Socio;
+=======
+CREATE OR ALTER PROCEDURE Activity.Agr_Inscripto_Actividad
+	@Id_Horario INTEGER,
+	@Id_Socio INTEGER
+
+AS
+BEGIN
+	BEGIN TRY
+		DECLARE @Fecha DATE
+		SET @Fecha = GETDATE()
+		IF TRY_CONVERT(INT,@Id_Horario) IS NULL
+		BEGIN
+			PRINT('El Id de horario ingresado no es un numero')
+			RAISERROR('El Id de horario ingresado no es un numero',16,1)
+		END
+
+		IF NOT EXISTS (SELECT 1 FROM Activity.Horario_Actividad WHERE Id_Horario = @Id_Horario)
+		BEGIN
+			PRINT('El Id de horario ingresado no existe')
+			RAISERROR('El Id de horario ingresado no existe',16,1)
+		END
+
+		IF TRY_CONVERT(INT,@Id_Socio) IS NULL
+		BEGIN
+			PRINT('El Id de socio ingresado no es un numero')
+			RAISERROR('El Id de socio ingresado no es un numero',16,1)
+		END
+
+		IF NOT EXISTS (SELECT 1 FROM Person.Socio WHERE Id_Socio = @Id_Socio)
+		BEGIN
+			PRINT('El Id de socio ingresado no existe')
+			RAISERROR('El Id de socio ingresado no existe',16,1)
+		END
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo en la creacion de Inscripto',16,1)
+			RETURN;
+		END
+	END CATCH
+	INSERT INTO Activity.Inscripto_Actividad(Id_Horario, Id_Socio, Fecha_Inscripcion)
+	VALUES (@Id_Horario, @Id_Socio, @Fecha)
+END
+GO
+
+CREATE OR ALTER PROCEDURE Activity.Agr_Inscripto_Act_Extra
+	@Id_Act_Extra INTEGER,
+	@Id_Persona INT,
+	@Fecha DATE,
+	@Es_Alquiler INT
+AS
+BEGIN
+	BEGIN TRY
+	IF TRY_CONVERT(INT,@Id_Act_Extra) IS NULL
+	BEGIN
+		PRINT('El valor de ID no es numerico')
+		RAISERROR('El valor de ID no es numerico',16,1)
+	END
+
+	IF NOT EXISTS (SELECT 1 FROM Activity.Actividad_Extra WHERE Id_Actividad_Extra = @Id_Act_Extra)
+	BEGIN
+		PRINT('El valor de ID actividad no existe')
+		RAISERROR('El valor de ID actividad no existe',16,1)
+	END
+
+	IF TRY_CONVERT(INT,@Id_Persona) IS NULL
+	BEGIN
+		PRINT('El valor de ID no es numero')
+		RAISERROR('El valor de ID no es numerico',16,1)
+	END
+
+	IF NOT EXISTS (SELECT 1 FROM Person.Persona WHERE Id_Persona = @Id_Persona)
+	BEGIN
+		PRINT('El valor de ID persona no existe')
+		RAISERROR('El valor de ID persona no existe',16,1)
+	END
+	IF @Es_Alquiler > 1 OR @Es_Alquiler < 0
+		BEGIN
+			PRINT('Ingrese un 1 para indicar alquiler, un 0 para indicar actividad normal (pileta, colonia, etc)')
+			RAISERROR('Ingrese un 1 para indicar alquiler, un 0 para indicar actividad normal (pileta, colonia, etc)',16,1)
+		END
+	IF @Es_Alquiler = 1
+	BEGIN
+		IF @Fecha NOT BETWEEN GETDATE() AND DATEADD(MONTH,2,GETDATE())
+		BEGIN
+			IF @Fecha < GETDATE()
+			BEGIN
+				PRINT('Doc, I need you to get me to the future.')
+				RAISERROR('Doc, I need you to get me to the future.',16,1)
+			END
+
+			ELSE
+			
+			BEGIN
+				PRINT('La fecha ingresada esta a mas de 2 meses de distancia')
+				RAISERROR('La fecha ingresada esta a mas de 2 meses de distancia',16,1)
+			END
+		END
+	END
+	
+	ELSE
+
+	SET @Fecha = GETDATE()
+	IF NOT EXISTS(SELECT 1 FROM Jornada.Jornada WHERE Fecha = @Fecha)
+	BEGIN
+		PRINT('La fecha ingresada no esta cargada a nuestro sistema')
+	END
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo en la creacion de Inscripto',16,1)
+			RETURN;
+		END
+	END CATCH
+END
+GO
+
+		---- Para Tabal Groups ----
+CREATE OR ALTER PROCEDURE Groups.Agr_Miembro_Familia
+	@Id_Socio INT,
+	@Id_Grupo INT
+AS
+BEGIN
+	BEGIN TRY
+		IF NOT EXISTS (SELECT 1 FROM Groups.Grupo_Familiar WHERE Id_Grupo_Familiar = @Id_Grupo)-- Validar existencia del grupo familiar
+		BEGIN
+			PRINT('El grupo familiar no existe')
+			RAISERROR('hubo un error ya que no existe el grupo familiar', 16, 1)
+		END
+
+		IF NOT EXISTS (SELECT 1 FROM Person.Socio WHERE Id_Socio = @Id_Socio)-- Validar existencia del socio
+		BEGIN
+			PRINT('El socio no existe')
+			RAISERROR('hubo un error ya que no existe el socio', 16, 1)
+		END
+
+		IF EXISTS (SELECT 1 FROM Groups.Miembro_Familia WHERE Id_Socio = @Id_Socio)-- Validar que el socio no pertenezca ya a un grupo
+		BEGIN
+			PRINT('El socio ya pertenece a un grupo familiar')
+			RAISERROR('hubo un error ya que pertenece a un grupo familiar', 16, 1)
+		END
+
+		INSERT INTO Groups.Miembro_Familia (Id_Socio, Id_Familia)-- Insertar relación
+		VALUES (@Id_Socio, @Id_Grupo)
+
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrió un error al vincular el socio al grupo familiar', 16, 1)
+			RETURN
+		END
+	END CATCH
+END
+GO
+
+CREATE OR ALTER PROCEDURE Groups.Agr_Grupo_Familiar
+	@Nombre_Familia VARCHAR(50),
+	@Id_Socio INT  -- socio que se va a asociar al grupo recién creado
+AS
+BEGIN
+	BEGIN TRY
+		DECLARE @Id_Grupo INT
+
+		SET @Nombre_Familia = TRIM(@Nombre_Familia)	-- Validación nombre
+		IF @Nombre_Familia = '' OR LEN(@Nombre_Familia) > 50
+		BEGIN
+			PRINT('Nombre de familia inválido')
+			RAISERROR('.', 16, 1)
+		END
+
+		
+		IF NOT EXISTS (SELECT 1 FROM Person.Socio WHERE Id_Socio = @Id_Socio)-- Validar que el socio exista y no esté ya en un grupo
+		BEGIN
+			PRINT('El socio no existe')
+			RAISERROR('.', 16, 1)
+		END
+
+		IF EXISTS (
+			SELECT 1 FROM Groups.Miembro_Familia WHERE Id_Socio = @Id_Socio
+		)
+		BEGIN
+			PRINT('El socio ya pertenece a un grupo familiar')
+			RAISERROR('.', 16, 1)
+		END
+
+		INSERT INTO Groups.Grupo_Familiar (Nombre_Familia)-- Crear grupo
+		VALUES (@Nombre_Familia)
+
+		SET @Id_Grupo = SCOPE_IDENTITY()
+
+		EXEC Groups.Agr_Miembro_Familia-- Asociar al socio al nuevo grupo
+			@Id_Socio = @Id_Socio,
+			@Id_Grupo = @Id_Grupo
+
+		RETURN @Id_Grupo
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Error al crear grupo familiar', 16, 1)
+			RETURN
+		END
+	END CATCH
+END
+GO
+>>>>>>> Stashed changes
