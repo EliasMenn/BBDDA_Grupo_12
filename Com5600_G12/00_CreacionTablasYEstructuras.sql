@@ -312,11 +312,11 @@ BEGIN
 	CREATE TABLE Groups.Categoria
 	(
 		Id_Categoria INT PRIMARY KEY IDENTITY (100,1),
+		Nombre_Cat VARCHAR(50),
 		EdadMin INT,
 		EdadMax INT,
 		Descr VARCHAR(50),
 		Costo DECIMAL,
-		Referencia_Detalle INT 
 	)
 END
 

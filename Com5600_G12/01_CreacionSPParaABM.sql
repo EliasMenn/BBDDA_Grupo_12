@@ -305,13 +305,13 @@ BEGIN
 			RAISERROR('-',16,1)
 		END
 
+		SET @Nombre_Rol = TRIM(@Nombre_Rol)
+
 		IF EXISTS (SELECT 1 FROM Person.Rol WHERE Nombre_Rol = @Nombre_Rol)
 		BEGIN
 			PRINT('Ya existe un rol con ese nombre')
 			RAISERROR('.',16,1)
 		END
-
-		SET @Nombre_Rol = TRIM(@Nombre_Rol)
 
 		IF @Nombre_Rol = '' OR @Nombre_Rol LIKE '%[^a-zA-Z ]%' OR LEN(@Nombre_Rol) > 25
 		BEGIN
@@ -373,6 +373,13 @@ BEGIN
 		END
 
 		SET @Nombre_Usuario = TRIM(@Nombre_Usuario)
+
+		IF EXISTS (SELECT 1 FROM Person.Usuario WHERE Nombre_Usuario = @Nombre_Usuario)
+		BEGIN
+			PRINT('Ya existe un usuario con ese nombre')
+			RAISERROR('.',16,1)
+		END
+
 		IF @Nombre_Usuario = '' OR LEN(@Nombre_Usuario) > 30
 		BEGIN 
 			PRINT('El nombre de usuario no es valido')
@@ -494,6 +501,68 @@ BEGIN
 END
 GO
 
+CREATE OR ALTER PROCEDURE Groups.Agr_Categoria
+	@Nombre_Cat VARCHAR(50),
+	@Edad_Min INTEGER,
+	@Edad_Max INTEGER,
+	@Descr VARCHAR(50),
+	@Costo DECIMAL
+AS
+BEGIN
+	BEGIN TRY
+		DECLARE @Id INTEGER
+		SET @Nombre_Cat = TRIM(@Nombre_Cat)
+
+		IF EXISTS (SELECT 1 FROM Groups.Categoria WHERE @Nombre_Cat = @Nombre_Cat)
+		BEGIN
+			PRINT('Ya existe una categoria con ese nombre')
+			RAISERROR('.',16,1)
+		END
+
+		IF @Nombre_Cat = '' OR @Nombre_Cat LIKE '%[^a-zA-Z ]%' OR LEN(@Nombre_Cat) > 50
+		BEGIN
+			PRINT('Nombre de categoria invalido')
+			RAISERROR('.',16,1)
+		END
+		
+		IF @Edad_Min < 0 OR @Edad_Max < @Edad_Min
+		BEGIN
+			PRINT('Rango de edades invalido')
+			RAISERROR('El rango de edades es invalido',16,1)
+		END
+
+		SET @Descr = TRIM(@Descr)
+
+		IF @Descr = '' OR @Descr LIKE '%[^a-zA-Z ]%' OR LEN(@Descr) > 50
+		BEGIN
+			PRINT('Descripcion Invalida')
+			RAISERROR('.',16,1)
+		END
+
+		IF @Costo < 0
+		BEGIN
+			PRINT('El costo no puede ser negativo')
+			RAISERROR('El costo no debe ser negativo',16,1)
+		END
+		INSERT INTO Groups.Categoria (Nombre_Cat, EdadMin, EdadMax, Descr, Costo)
+		VALUES (@Nombre_Cat,@Edad_Min, @Edad_Max, @Descr, @Costo)
+
+		SET @Id = SCOPE_IDENTITY()
+
+		EXEC Payment.Agr_Referencia_Detalle
+			@Id,
+			@Nombre_Cat
+
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo en la creacion de categoria',16,1)
+			RETURN;
+		END
+	END CATCH
+END
+GO
  -- Para la tabla Actividad --
 CREATE OR ALTER PROCEDURE Activity.Agr_Actividad
 	@Nombre_Actividad VARCHAR(50),
@@ -502,7 +571,14 @@ CREATE OR ALTER PROCEDURE Activity.Agr_Actividad
 AS
 BEGIN
 	BEGIN TRY
+		DECLARE @Id INTEGER
 		SET @Nombre_Actividad = TRIM(@Nombre_Actividad)
+
+		IF EXISTS (SELECT 1 FROM Activity.Actividad WHERE Nombre = @Nombre_Actividad)
+		BEGIN
+			PRINT('Ya existe una actividad con ese nombre')
+			RAISERROR('.',16,1)
+		END
 
 		IF @Nombre_Actividad = '' OR @Nombre_Actividad LIKE '%[^a-zA-Z]%'
 		BEGIN
@@ -544,6 +620,12 @@ BEGIN
 	END CATCH
 	INSERT INTO Activity.Actividad(Nombre,Descr,Costo)
 	VALUES(@Nombre_Actividad,@Desc_Act,@Costo)
+	
+	SET @Id = SCOPE_IDENTITY()
+
+	EXEC Payment.Agr_Referencia_Detalle
+	@Id,
+	@Nombre_Actividad
 END
 GO
 
@@ -559,6 +641,12 @@ BEGIN
 	BEGIN TRY
 		DEClARE @Id INTEGER
 		SET @Nombre_Actividad = TRIM(@Nombre_Actividad)
+
+		IF EXISTS (SELECT 1 FROM Activity.Actividad_Extra WHERE Nombre = @Nombre_Actividad)
+		BEGIN
+			PRINT('Ya existe una actividad con ese nombre')
+			RAISERROR('.',16,1)
+		END
 
 		IF @Nombre_Actividad = '' OR @Nombre_Actividad LIKE '%[^a-zA-Z]%'
 		BEGIN
@@ -612,6 +700,12 @@ BEGIN
 	END CATCH
 	INSERT INTO Activity.Actividad_Extra(Nombre,Descr,Costo_Soc, Costo)
 	VALUES(@Nombre_Actividad,@Desc_Act,@Costo_Soc,@Costo_No_Soc)
+
+	SET @Id = SCOPE_IDENTITY()
+
+	EXEC Payment.Agr_Referencia_Detalle
+	@Id,
+	@Nombre_Actividad
 END
 GO
 
