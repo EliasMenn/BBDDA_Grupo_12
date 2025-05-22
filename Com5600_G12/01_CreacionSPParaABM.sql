@@ -402,13 +402,13 @@ GO
 
 
 		---- Para Tabal Groups ----
-CREATE OR ALTER PROCEDURE Person.Agr_Miembro_Familiar
+CREATE OR ALTER PROCEDURE Groups.Agr_Miembro_Familiar
 	@Id_Socio INT,
 	@Id_Grupo INT
 AS
 BEGIN
 	BEGIN TRY
-		IF NOT EXISTS (SELECT 1 FROM Person.Grupo_Familiar WHERE Id_Grupo_Familiar = @Id_Grupo)-- Validar existencia del grupo familiar
+		IF NOT EXISTS (SELECT 1 FROM Groups.Grupo_Familiar WHERE Id_Grupo_Familiar = @Id_Grupo)-- Validar existencia del grupo familiar
 		BEGIN
 			PRINT('El grupo familiar no existe')
 			RAISERROR('hubo un error ya que no existe el grupo familiar', 16, 1)
@@ -420,13 +420,13 @@ BEGIN
 			RAISERROR('hubo un error ya que no existe el socio', 16, 1)
 		END
 
-		IF EXISTS (SELECT 1 FROM Person.Miembro_Familia WHERE Id_Socio = @Id_Socio)-- Validar que el socio no pertenezca ya a un grupo
+		IF EXISTS (SELECT 1 FROM Groups.Miembro_Familia WHERE Id_Socio = @Id_Socio)-- Validar que el socio no pertenezca ya a un grupo
 		BEGIN
 			PRINT('El socio ya pertenece a un grupo familiar')
 			RAISERROR('hubo un error ya que pertenece a un grupo familiar', 16, 1)
 		END
 
-		INSERT INTO Person.Miembro_Familia (Id_Socio, Id_Grupo_Familiar)-- Insertar relación
+		INSERT INTO Groups.Miembro_Familia (Id_Socio, Id_Familia)-- Insertar relación
 		VALUES (@Id_Socio, @Id_Grupo)
 
 	END TRY
@@ -442,7 +442,7 @@ GO
 
 
 
-CREATE OR ALTER PROCEDURE Person.Agr_Grupo_Familiar
+CREATE OR ALTER PROCEDURE Groups.Agr_Grupo_Familiar
 	@Nombre_Familia VARCHAR(50),
 	@Id_Socio INT  -- socio que se va a asociar al grupo recién creado
 AS
@@ -465,19 +465,19 @@ BEGIN
 		END
 
 		IF EXISTS (
-			SELECT 1 FROM Person.Miembro_Familia WHERE Id_Socio = @Id_Socio
+			SELECT 1 FROM Groups.Miembro_Familia WHERE Id_Socio = @Id_Socio
 		)
 		BEGIN
 			PRINT('El socio ya pertenece a un grupo familiar')
 			RAISERROR('.', 16, 1)
 		END
 
-		INSERT INTO Person.Grupo_Familiar (Nombre_Familia)-- Crear grupo
+		INSERT INTO Groups.Grupo_Familiar (Nombre_Familia)-- Crear grupo
 		VALUES (@Nombre_Familia)
 
 		SET @Id_Grupo = SCOPE_IDENTITY()
 
-		EXEC Person.Agr_MiembroFamilia-- Asociar al socio al nuevo grupo
+		EXEC Groups.Agr_MiembroFamilia-- Asociar al socio al nuevo grupo
 			@Id_Socio = @Id_Socio,
 			@Id_Grupo = @Id_Grupo
 
@@ -518,6 +518,6 @@ EXEC Person.Agr_Socio
     @Id_Tutor = NULL  -- IMPORTANTE: NULL para mayores de edad
 
 -- Crear grupo familiar
-EXEC Person.Agr_GrupoFamiliar
+EXEC Groups.Agr_GrupoFamiliar
 	@Nombre_Familia = 'Fernandez',
 	@Id_Socio = @Id_Socio;
