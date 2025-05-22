@@ -148,8 +148,8 @@ IF OBJECT_ID('Payment.Detalle_Factura') IS NULL
 BEGIN 
 	CREATE TABLE Payment.Detalle_Factura
 	(
-		Id_Detalle INT IDENTITY(1,1) PRIMARY KEY,
-		Id_Factura INT NOT NULL,
+		Id_Factura INT PRIMARY KEY,
+		Id_Detalle INT,
 		Concepto Varchar(50),
 		Monto Decimal,
 		Descuento_Familiar INT,
@@ -158,6 +158,16 @@ BEGIN
 		Descuento_Lluvia INT,
 		CONSTRAINT FK_Detalle_Factura
 		FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura)
+	)
+END 
+
+IF OBJECT_ID('Payment.Referencia_Detalle') IS NULL
+BEGIN 
+	CREATE TABLE Payment.Referencia_Detalle
+	(
+		Referencia INT,
+		Tipo_Referencia INT, --Indica a que nos referimos 1-Categoria, 2-Actividad, 3-Actividad Extra
+		Id_Detalle INT
 	)
 END 
 
@@ -235,7 +245,8 @@ BEGIN
 		Id_Actividad INT IDENTITY (1,1) PRIMARY KEY,
 		Nombre VARCHAR(50),
 		Descr VARCHAR(50),
-		Costo DECIMAL
+		Costo DECIMAL,
+		Referencia_Detalle INTEGER
 	)
 END
 
@@ -247,7 +258,8 @@ BEGIN
 		Nombre VARCHAR(50),
 		Descr VARCHAR(50),
 		Costo_Soc DECIMAL,
-		Costo DECIMAL
+		Costo DECIMAL,
+		Referencia_Detalle INTEGER 
 	)
 END
 
@@ -271,13 +283,10 @@ BEGIN
 	(
 		Id_Horario INT,
 		Id_Socio INT,
-		Id_Detalle INT
 		CONSTRAINT FK_Inscripto_Horario
 		FOREIGN KEY (Id_Horario) REFERENCES Activity.Horario_Actividad(Id_Horario),
 		CONSTRAINT FK_Inscripto_Socio
 		FOREIGN KEY (Id_Socio) REFERENCES Person.Socio(Id_Socio),
-		CONSTRAINT FK_Inscripto_Detalle
-		FOREIGN KEY (Id_Detalle) REFERENCES Payment.Detalle_Factura(Id_Detalle)
 	)
 END
 
@@ -288,13 +297,11 @@ BEGIN
 		Id_Act_Extra INT,
 		Fecha DATE,
 		Id_Persona INT,
-		Id_Detalle INT
 		CONSTRAINT FK_InscrExt_ActExt
 		FOREIGN KEY (Id_Act_Extra) REFERENCES Activity.Actividad_Extra(Id_Actividad_Extra),
 		CONSTRAINT FK_InscrExt_Persona
 		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona),
-		CONSTRAINT FK_InscrExt_Detalle
-		FOREIGN KEY (Id_Detalle) REFERENCES Payment.Detalle_Factura(Id_Detalle),
+
 	)
 END
 
@@ -308,7 +315,8 @@ BEGIN
 		EdadMin INT,
 		EdadMax INT,
 		Descr VARCHAR(50),
-		Costo DECIMAL
+		Costo DECIMAL,
+		Referencia_Detalle INT 
 	)
 END
 
