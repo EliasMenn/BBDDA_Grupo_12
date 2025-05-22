@@ -296,19 +296,16 @@ EXEC Payment.Agr_Detalle_Factura
 -- CASO CORRECTO
 EXEC Payment.Agr_Referencia_Detalle
     @Referencia = 200,
-    @Tipo_Referencia = 2,
     @Descripcion = 'Fútbol infantil';
 
 -- CASO ERROR: Descripción vacía
 EXEC Payment.Agr_Referencia_Detalle
-    @Referencia = 200,
-    @Tipo_Referencia = 2,
+    @Referencia = 201,
     @Descripcion = '';
 
 -- CASO ERROR: Tipo inválido
 EXEC Payment.Agr_Referencia_Detalle
-    @Referencia = 200,
-    @Tipo_Referencia = 9,
+    @Referencia = 502,
     @Descripcion = 'Yoga adultos';
 
 ------------------------------------------- Para Tabla Pago -------------------------------------------

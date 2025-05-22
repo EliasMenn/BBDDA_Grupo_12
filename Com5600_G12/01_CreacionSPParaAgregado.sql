@@ -666,13 +666,13 @@ GO
 
 -- Agregar medio pago
 CREATE OR ALTER PROCEDURE Payment.Agr_Medio_Pago
-    @Id_Socio INT,
+    @Id_Persona INT,
     @Id_TipoMedio INT,
     @Datos_Medio VARCHAR(MAX)
 AS
 BEGIN
     BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM Person.Persona WHERE Id_Persona = @Id_Socio)
+        IF NOT EXISTS (SELECT 1 FROM Person.Persona WHERE Id_Persona = @Id_Persona)
         BEGIN
             PRINT('El socio no existe')
             RAISERROR('.',16,1)
@@ -685,9 +685,9 @@ BEGIN
         END
 
         INSERT INTO Payment.Medio_Pago (
-            Id_Socio, Id_TipoMedio, Datos_Medio)
+            Id_Persona, Id_TipoMedio, Datos_Medio)
         VALUES (
-            @Id_Socio, @Id_TipoMedio, @Datos_Medio
+            @Id_Persona, @Id_TipoMedio, @Datos_Medio
         )
     END TRY
     BEGIN CATCH
@@ -1240,11 +1240,16 @@ GO
 
 CREATE OR ALTER PROCEDURE Payment.Agr_Referencia_Detalle
     @Referencia INT,
-    @Tipo_Referencia INT,
     @Descripcion VARCHAR(50)
 AS
 BEGIN
     BEGIN TRY
+		IF EXISTS (SELECT 1 FROM Payment.Referencia_Detalle WHERE Referencia = @Referencia)
+		BEGIN
+			PRINT('No puede haber numeros de referencia repetidos')
+            RAISERROR('.', 16, 1)
+		END
+		DECLARE @TIPO_REFERENCIA INTEGER
         SET @Descripcion = TRIM(@Descripcion)
 
         IF @Descripcion = '' OR LEN(@Descripcion) > 50
@@ -1253,11 +1258,25 @@ BEGIN
             RAISERROR('.', 16, 1)
         END
 
-        IF @Referencia < 100
+        IF @Referencia < 100 OR @Referencia > 400
         BEGIN
-            PRINT('La referencia debe ser mayor o igual a 100')
+            PRINT('La referencia debe ser mayor o igual a 100 y menor a 400')
             RAISERROR('.', 16, 1)
         END
+
+		IF @Referencia > 300
+		BEGIN 
+			SET @TIPO_REFERENCIA = 3
+		END
+		ELSE
+		IF @Referencia < 200
+		BEGIN
+			SET @TIPO_REFERENCIA = 1
+		END
+		ELSE
+		BEGIN 
+			SET @TIPO_REFERENCIA = 2
+		END
 
         IF @Tipo_Referencia NOT IN (1, 2, 3)
         BEGIN
