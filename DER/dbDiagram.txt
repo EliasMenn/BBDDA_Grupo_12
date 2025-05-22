@@ -1,3 +1,5 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
 Table Usuario {
   Id_Usuario integer [primary key]
   Id_Rol Integer
@@ -50,7 +52,7 @@ Table Factura{
 }
 
 Table Detalle_Factura {
-  Id_Detalle Integer [primary key]
+  Id_Detalle Integer 
   Id_Factura Integer  [primary key]
   Concepto String [not null]
   Monto Decimal [not null]
@@ -61,10 +63,11 @@ Table Detalle_Factura {
 }
 
 Table MedioPago {
-  Id_Socio Integer [primary key]
-  Id_MedioPago Integer [not null]
+  Id_MedioPago Integer [primary Key]
+  Id_Socio Integer [not null]
   Id_TipoMedio Integer [not null]
   Datos_Medio String 
+
 }
 
 Table Morosidad {
@@ -91,7 +94,12 @@ Table Pago {
   CantidadPago Decimal [not null]
   Pago_Cuenta Bool [not null]
 }
-
+table Referencia_Detalle{
+  Referencia Integer
+  Tipo_Referencia Integer
+  Descripcion String
+  Id_Detalle Integer
+}
 Table Cuenta{
   Id_Persona integer [primary key]
   SaldoCuenta Decimal [not null]
@@ -108,6 +116,7 @@ Table Actividad{
   Nombre String
   Desc String
   Costo Decimal
+  Id_Detalle integer
 }
 
 Table Horario_Actividad{ 
@@ -121,7 +130,6 @@ Table Horario_Actividad{
 Table Inscripto_Actividad{
   Id_Horario Integer
   Id_Socio Integer
-  Id_Detalle integer
   } 
 
 Table Categoria{
@@ -130,6 +138,7 @@ Table Categoria{
   EdadMax integer
   Desc String
   Costo Decimal
+  Id_Detalle Integer
 }
 
 Table Actividad_Extra{
@@ -138,6 +147,7 @@ Table Actividad_Extra{
   Desc String
   Costo_Soc Decimal
   Costo Decimal
+  Id_Detalle Integer
 }
 
 Table Inscripto_Act_Extra{
@@ -180,4 +190,7 @@ ref: Jornada.Fecha < Inscripto_Act_Extra.Fecha
 ref: Socio.Id_Socio < Miembro_Familia.Id_Socio
 ref: Grupo_Familiar.Id_Grupo_Familiar < Miembro_Familia.Id_Familia
 ref: Grupo_Familiar.Id_Grupo_Familiar < Detalle_Factura.Id_Familia
-ref: Detalle_Factura.Id_Detalle < Inscripto_Actividad.Id_Detalle
+ref: Referencia_Detalle.Id_Detalle < Actividad.Id_Detalle
+ref: Referencia_Detalle.Id_Detalle < Actividad_Extra.Id_Detalle
+ref: Referencia_Detalle.Id_Detalle < Categoria.Id_Detalle
+ref: Detalle_Factura.Id_Detalle < Referencia_Detalle.Id_Detalle
