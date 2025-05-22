@@ -30,7 +30,7 @@ END
 
 IF SCHEMA_ID('Payment') IS NULL
 BEGIN
-	EXEC('CREATE SCHEMA Payment'); --El Schema User se vinculara con las tablas de Factura, Morosidad, Detalle_Factura, Pago, Medio_Pago, Tipo_Medio, Cuenta.
+	EXEC('CREATE SCHEMA Payment'); --El Schema Payment se vinculara con las tablas de Factura, Morosidad, Detalle_Factura, Pago, Medio_Pago, Tipo_Medio, Cuenta.
 END
 
 IF SCHEMA_ID('Activity') IS NULL
@@ -259,7 +259,7 @@ BEGIN
 		Id_Actividad INT,
 		Id_Categoria INT,
 		Horario TIME,
-		Dias VARCHAR(25)
+		Dias VARCHAR(100)
 		CONSTRAINT FK_Horario__Actividad
 		FOREIGN KEY (Id_Actividad) REFERENCES Activity.Actividad(Id_Actividad)
 	)

@@ -399,3 +399,206 @@ BEGIN
 	VALUES (@Id_Rol, @Id_Persona, @Nombre_Usuario, @ContraseniaHash, @Vigencia)
 END
 GO
+ -- Para la tabla Actividad --
+CREATE OR ALTER PROCEDURE Activity.Agr_Actividad
+	@Nombre_Actividad VARCHAR(50),
+	@Desc_Act VARCHAR(50),
+	@Costo DECIMAL
+AS
+BEGIN
+	BEGIN TRY
+		SET @Nombre_Actividad = TRIM(@Nombre_Actividad)
+
+		IF @Nombre_Actividad = '' OR @Nombre_Actividad LIKE '%[^a-zA-Z]%'
+		BEGIN
+			PRINT('El nombre de la actividad no es valido.')
+			RAISERROR('El nombre de la actividad no es valido.',16,1)
+		END
+
+		IF EXISTS (SELECT 1 FROM Activity.Actividad WHERE Nombre = @Nombre_Actividad)
+		BEGIN
+			PRINT('Ya existe una actividad con el mismo nombre.')
+			RAISERROR('Ya existe una activdad con el mismo nombre.',16,1)
+		END
+
+		SET @Desc_Act = TRIM(@Desc_Act)
+		IF @Desc_Act = '' OR @Desc_Act LIKE '%[^a-zA-Z ]%'
+		BEGIN
+			PRINT('La descripcion de la actividad no es valida.')
+			RAISERROR('La descripcion de la actividad no es valida.',16,1)
+		END
+
+		IF TRY_CONVERT(decimal,@Costo) IS NULL 
+		BEGIN
+			PRINT('El costo no se puede transformar en decimal')
+			RAISERROR('El costo no se puede transformar en decimal',16,1)
+		END
+
+		IF @Costo < 0
+		BEGIN
+			PRINT('El costo no puede ser negativo')
+			RAISERROR('El costo no puede ser negativo',16,1)
+		END
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo en la creacion de Actividad',16,1)
+			RETURN;
+		END
+	END CATCH
+	INSERT INTO Activity.Actividad(Nombre,Descr,Costo)
+	VALUES(@Nombre_Actividad,@Desc_Act,@Costo)
+END
+GO
+
+-- Para Tabla Act Extra
+
+CREATE OR ALTER PROCEDURE Activity.Agr_Actividad_Extr
+	@Nombre_Actividad VARCHAR(50),
+	@Desc_Act VARCHAR(50),
+	@Costo_Soc DECIMAL,
+	@Costo_No_Soc DECIMAL
+AS
+BEGIN
+	BEGIN TRY
+		SET @Nombre_Actividad = TRIM(@Nombre_Actividad)
+
+		IF @Nombre_Actividad = '' OR @Nombre_Actividad LIKE '%[^a-zA-Z]%'
+		BEGIN
+			PRINT('El nombre de la actividad no es valido.')
+			RAISERROR('El nombre de la actividad no es valido.',16,1)
+		END
+
+		IF EXISTS (SELECT 1 FROM Activity.Actividad WHERE Nombre = @Nombre_Actividad)
+		BEGIN
+			PRINT('Ya existe una actividad con el mismo nombre.')
+			RAISERROR('Ya existe una activdad con el mismo nombre.',16,1)
+		END
+
+		SET @Desc_Act = TRIM(@Desc_Act)
+		IF @Desc_Act = '' OR @Desc_Act LIKE '%[^a-zA-Z ]%'
+		BEGIN
+			PRINT('La descripcion de la actividad no es valida.')
+			RAISERROR('La descripcion de la actividad no es valida.',16,1)
+		END
+
+		IF TRY_CONVERT(decimal,@Costo_Soc) IS NULL 
+		BEGIN
+			PRINT('El costo no se puede transformar en decimal')
+			RAISERROR('El costo no se puede transformar en decimal',16,1)
+		END
+
+		IF @Costo_Soc < 0
+		BEGIN
+			PRINT('El costo no puede ser negativo')
+			RAISERROR('El costo no puede ser negativo',16,1)
+		END
+
+		IF TRY_CONVERT(decimal,@Costo_No_Soc) IS NULL 
+		BEGIN
+			PRINT('El costo no se puede transformar en decimal')
+			RAISERROR('El costo no se puede transformar en decimal',16,1)
+		END
+
+		IF @Costo_No_Soc < 0
+		BEGIN
+			PRINT('El costo no puede ser negativo')
+			RAISERROR('El costo no puede ser negativo',16,1)
+		END
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo en la creacion de Actividad',16,1)
+			RETURN;
+		END
+	END CATCH
+	INSERT INTO Activity.Actividad_Extra(Nombre,Descr,Costo_Soc, Costo)
+	VALUES(@Nombre_Actividad,@Desc_Act,@Costo_Soc,@Costo_No_Soc)
+END
+GO
+
+-- Para tabla Actividad_Horario --
+
+CREATE OR ALTER PROCEDURE Activity.Agr_Horario
+	@Id_Actividad INTEGER,
+	@Id_Categoria INTEGER,
+	@Horario TIME,
+	@Dias VARCHAR(100)
+AS
+BEGIN
+	BEGIN TRY
+		DECLARE @Temporal TABLE (Dia VARCHAR(100))
+		DECLARE @Normalizados VARCHAR(100) = ''
+		IF TRY_CONVERT(INT,@Id_Actividad) IS NULL
+		BEGIN
+			PRINT('El codigo de actividad no es valido')
+			RAISERROR('El codigo de actividad no es valido',16,1)
+		END
+
+		IF NOT EXISTS (SELECT 1 FROM Activity.Actividad WHERE Id_Actividad = @Id_Actividad)
+		BEGIN	
+			PRINT('No existe actividad con este codigo')
+			RAISERROR('No existe actividad con este codigo',16,1)
+		END
+
+		IF TRY_CONVERT(INT,@Id_Categoria) IS NULL
+		BEGIN
+			PRINT('El codigo de categoria no es valido')
+			RAISERROR('El codigo de categoria no es valido',16,1)
+		END
+
+		IF NOT EXISTS (SELECT 1 FROM Groups.Categoria WHERE Id_Categoria = @Id_Categoria)
+		BEGIN	
+			PRINT('No existe categoria con este codigo')
+			RAISERROR('No existe categoria con este codigo',16,1)
+		END
+
+		IF @Horario NOT LIKE '[0-2][0-9]:[0-5][0-9]' OR LEN(@Horario) != 5
+		BEGIN 
+			PRINT('Por favor utilize formato hh:mm')
+			SET @Horario = CONVERT(VARCHAR(5), @Horario, 108)
+		END
+
+		IF @Dias LIKE '%[^a-zA-Z,]%'
+		BEGIN
+			PRINT('Los dias contienen caracteres no validos (utilice una coma como separador)')
+			RAISERROR('Los dias contienen caracteres no validos (utilice una coma como separador)',16,1)
+		END
+		
+		--Separamos el string en los dias, partimos los mismos para normalizarlos y luego los volvemos a juntar--
+
+		INSERT INTO @Temporal
+		SELECT value FROM string_split(@Dias, ',')
+
+		SELECT @Normalizados = STRING_AGG(UPPER(LEFT(Dia,1)) + LOWER(SUBSTRING(Dia, 2,LEN(Dia))), ',')
+		FROM @Temporal
+
+		IF EXISTS
+		(
+			SELECT 1 
+			FROM string_split(@Normalizados, ',') AS d
+			WHERE d.value NOT IN(
+				'Lunes','Martes','Miercoles','Jueves','Viernes','Sabado','Domingo')
+		)
+		BEGIN
+			PRINT('Se ingreso un dia invalido')
+			RAISERROR('Se ingreso un dia invalido',16,1)
+		END
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo en la creacion de Horario',16,1)
+			RETURN;
+		END
+	END CATCH
+	INSERT INTO Activity.Horario_Actividad(Id_Actividad,Id_Categoria,Horario,Dias)
+	VALUES (@Id_Actividad, @Id_Categoria, @Horario, @Normalizados)
+END
+GO
+
+-- Para tabla Inscripto_Actividad --
+
+CREATE OR ALTER PROCEDURE
