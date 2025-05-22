@@ -218,7 +218,7 @@ BEGIN
 	CREATE TABLE Payment.Medio_Pago
 	(
 		Id_Medio_Pago INT IDENTITY (1,1) PRIMARY KEY,
-		Id_Socio INT,
+		Id_Persona INT,
 		Id_TipoMedio INT,
 		Datos_Medio VARCHAR(MAX)
 		CONSTRAINT FK_Medio_Tipo
