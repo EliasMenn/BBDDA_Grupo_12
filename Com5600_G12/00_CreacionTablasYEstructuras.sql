@@ -30,7 +30,7 @@ END
 
 IF SCHEMA_ID('Payment') IS NULL
 BEGIN
-	EXEC('CREATE SCHEMA Payment'); --El Schema User se vinculara con las tablas de Factura, Morosidad, Detalle_Factura, Pago, Medio_Pago, Tipo_Medio, Cuenta.
+	EXEC('CREATE SCHEMA Payment'); --El Schema Payment se vinculara con las tablas de Factura, Morosidad, Detalle_Factura, Pago, Medio_Pago, Tipo_Medio, Cuenta.
 END
 
 IF SCHEMA_ID('Activity') IS NULL
@@ -148,8 +148,8 @@ IF OBJECT_ID('Payment.Detalle_Factura') IS NULL
 BEGIN 
 	CREATE TABLE Payment.Detalle_Factura
 	(
-		Id_Detalle INT IDENTITY(1,1) PRIMARY KEY,
-		Id_Factura INT NOT NULL,
+		Id_Factura INT PRIMARY KEY,
+		Id_Detalle INT,
 		Concepto Varchar(50),
 		Monto Decimal,
 		Descuento_Familiar INT,
@@ -158,6 +158,16 @@ BEGIN
 		Descuento_Lluvia INT,
 		CONSTRAINT FK_Detalle_Factura
 		FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura)
+	)
+END 
+
+IF OBJECT_ID('Payment.Referencia_Detalle') IS NULL
+BEGIN 
+	CREATE TABLE Payment.Referencia_Detalle
+	(
+		Referencia INT,		--Referencias arrancando en 100 = Categoria, 200 = Actividad, 300 = Actividad_Extra
+		Descripcion VARCHAR(50),
+		Id_Detalle INT
 	)
 END 
 
@@ -232,10 +242,10 @@ IF OBJECT_ID('Activity.Actividad') IS NULL
 BEGIN
 	CREATE TABLE Activity.Actividad
 	(
-		Id_Actividad INT IDENTITY (1,1) PRIMARY KEY,
+		Id_Actividad INT IDENTITY (200,1) PRIMARY KEY,
 		Nombre VARCHAR(50),
 		Descr VARCHAR(50),
-		Costo DECIMAL
+		Costo DECIMAL,
 	)
 END
 
@@ -243,11 +253,11 @@ IF OBJECT_ID('Activity.Actividad_Extra') IS NULL
 BEGIN
 	CREATE TABLE Activity.Actividad_Extra
 	(
-		Id_Actividad_Extra INT IDENTITY (1,1) PRIMARY KEY,
+		Id_Actividad_Extra INT IDENTITY (300,1) PRIMARY KEY,
 		Nombre VARCHAR(50),
 		Descr VARCHAR(50),
 		Costo_Soc DECIMAL,
-		Costo DECIMAL
+		Costo DECIMAL,
 	)
 END
 
@@ -259,7 +269,7 @@ BEGIN
 		Id_Actividad INT,
 		Id_Categoria INT,
 		Horario TIME,
-		Dias VARCHAR(25)
+		Dias VARCHAR(100)
 		CONSTRAINT FK_Horario__Actividad
 		FOREIGN KEY (Id_Actividad) REFERENCES Activity.Actividad(Id_Actividad)
 	)
@@ -271,13 +281,11 @@ BEGIN
 	(
 		Id_Horario INT,
 		Id_Socio INT,
-		Id_Detalle INT
+		Fecha_Inscripcion DATE,
 		CONSTRAINT FK_Inscripto_Horario
 		FOREIGN KEY (Id_Horario) REFERENCES Activity.Horario_Actividad(Id_Horario),
 		CONSTRAINT FK_Inscripto_Socio
 		FOREIGN KEY (Id_Socio) REFERENCES Person.Socio(Id_Socio),
-		CONSTRAINT FK_Inscripto_Detalle
-		FOREIGN KEY (Id_Detalle) REFERENCES Payment.Detalle_Factura(Id_Detalle)
 	)
 END
 
@@ -288,13 +296,11 @@ BEGIN
 		Id_Act_Extra INT,
 		Fecha DATE,
 		Id_Persona INT,
-		Id_Detalle INT
 		CONSTRAINT FK_InscrExt_ActExt
 		FOREIGN KEY (Id_Act_Extra) REFERENCES Activity.Actividad_Extra(Id_Actividad_Extra),
 		CONSTRAINT FK_InscrExt_Persona
 		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona),
-		CONSTRAINT FK_InscrExt_Detalle
-		FOREIGN KEY (Id_Detalle) REFERENCES Payment.Detalle_Factura(Id_Detalle),
+
 	)
 END
 
@@ -304,11 +310,12 @@ IF OBJECT_ID('Groups.Categoria') IS NULL
 BEGIN 
 	CREATE TABLE Groups.Categoria
 	(
-		Id_Categoria INT PRIMARY KEY,
+		Id_Categoria INT PRIMARY KEY IDENTITY (100,1),
 		EdadMin INT,
 		EdadMax INT,
 		Descr VARCHAR(50),
-		Costo DECIMAL
+		Costo DECIMAL,
+		Referencia_Detalle INT 
 	)
 END
 
@@ -407,4 +414,3 @@ BEGIN
 		FOREIGN KEY (FECHA) REFERENCES Jornada.Jornada(Fecha)
 	END
 END
-GO

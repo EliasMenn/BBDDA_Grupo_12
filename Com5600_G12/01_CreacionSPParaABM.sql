@@ -402,7 +402,7 @@ GO
 
 
 		---- Para Tabal Groups ----
-CREATE OR ALTER PROCEDURE Groups.Agr_Miembro_Familiar
+CREATE OR ALTER PROCEDURE Groups.Agr_Miembro_Familia
 	@Id_Socio INT,
 	@Id_Grupo INT
 AS
@@ -477,7 +477,7 @@ BEGIN
 
 		SET @Id_Grupo = SCOPE_IDENTITY()
 
-		EXEC Groups.Agr_MiembroFamilia-- Asociar al socio al nuevo grupo
+		EXEC Groups.Agr_Miembro_Familia-- Asociar al socio al nuevo grupo
 			@Id_Socio = @Id_Socio,
 			@Id_Grupo = @Id_Grupo
 
@@ -493,36 +493,207 @@ BEGIN
 END
 GO
 
-EXEC Person.Agr_Tutor
-	@Nombre = 'Marcos',
-	@Apellido = 'Fernandez',
-	@DNI = '30444555',
-	@Email = 'marcos.fernandez@gmail.com',
-	@Fecha_Nacimiento = '1980-03-12',
-	@Telefono_Contacto = '1122334455',
-	@Parentesco = 'Padre';
+ -- Para la tabla Actividad --
+CREATE OR ALTER PROCEDURE Activity.Agr_Actividad
+	@Nombre_Actividad VARCHAR(50),
+	@Desc_Act VARCHAR(50),
+	@Costo DECIMAL
+AS
+BEGIN
+	BEGIN TRY
+		SET @Nombre_Actividad = TRIM(@Nombre_Actividad)
 
-<<<<<<< Updated upstream
-SELECT * FROM Person.Socio
--- Crear socio
--- Socio mayor de edad (no necesita tutor)
-EXEC Person.Agr_Socio
-    @Nombre = 'Lucial',
-    @Apellido = 'Fernandez',
-    @DNI = '50223347',
-    @Email = 'lucia.fernandez@gmail.com',
-    @Fecha_Nacimiento = '2005-07-15',
-    @Telefono_Contacto = '1166778899',
-    @Telefono_Contacto_Emg = '1177665544',
-    @Obra_Social = 'OSDE',
-    @Nro_Socio_Obra = '123456',  -- Cambiar de '000000' a un número válido
-    @Id_Tutor = NULL  -- IMPORTANTE: NULL para mayores de edad
+		IF @Nombre_Actividad = '' OR @Nombre_Actividad LIKE '%[^a-zA-Z]%'
+		BEGIN
+			PRINT('El nombre de la actividad no es valido.')
+			RAISERROR('El nombre de la actividad no es valido.',16,1)
+		END
 
--- Crear grupo familiar
-EXEC Groups.Agr_GrupoFamiliar
-	@Nombre_Familia = 'Fernandez',
-	@Id_Socio = @Id_Socio;
-=======
+		IF EXISTS (SELECT 1 FROM Activity.Actividad WHERE Nombre = @Nombre_Actividad)
+		BEGIN
+			PRINT('Ya existe una actividad con el mismo nombre.')
+			RAISERROR('Ya existe una activdad con el mismo nombre.',16,1)
+		END
+
+		SET @Desc_Act = TRIM(@Desc_Act)
+		IF @Desc_Act = '' OR @Desc_Act LIKE '%[^a-zA-Z ]%'
+		BEGIN
+			PRINT('La descripcion de la actividad no es valida.')
+			RAISERROR('La descripcion de la actividad no es valida.',16,1)
+		END
+
+		IF TRY_CONVERT(decimal,@Costo) IS NULL 
+		BEGIN
+			PRINT('El costo no se puede transformar en decimal')
+			RAISERROR('El costo no se puede transformar en decimal',16,1)
+		END
+
+		IF @Costo < 0
+		BEGIN
+			PRINT('El costo no puede ser negativo')
+			RAISERROR('El costo no puede ser negativo',16,1)
+		END
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo en la creacion de Actividad',16,1)
+			RETURN;
+		END
+	END CATCH
+	INSERT INTO Activity.Actividad(Nombre,Descr,Costo)
+	VALUES(@Nombre_Actividad,@Desc_Act,@Costo)
+END
+GO
+
+-- Para Tabla Act Extra
+
+CREATE OR ALTER PROCEDURE Activity.Agr_Actividad_Extr
+	@Nombre_Actividad VARCHAR(50),
+	@Desc_Act VARCHAR(50),
+	@Costo_Soc DECIMAL,
+	@Costo_No_Soc DECIMAL
+AS
+BEGIN
+	BEGIN TRY
+		DEClARE @Id INTEGER
+		SET @Nombre_Actividad = TRIM(@Nombre_Actividad)
+
+		IF @Nombre_Actividad = '' OR @Nombre_Actividad LIKE '%[^a-zA-Z]%'
+		BEGIN
+			PRINT('El nombre de la actividad no es valido.')
+			RAISERROR('El nombre de la actividad no es valido.',16,1)
+		END
+
+		IF EXISTS (SELECT 1 FROM Activity.Actividad WHERE Nombre = @Nombre_Actividad)
+		BEGIN
+			PRINT('Ya existe una actividad con el mismo nombre.')
+			RAISERROR('Ya existe una activdad con el mismo nombre.',16,1)
+		END
+
+		SET @Desc_Act = TRIM(@Desc_Act)
+		IF @Desc_Act = '' OR @Desc_Act LIKE '%[^a-zA-Z ]%'
+		BEGIN
+			PRINT('La descripcion de la actividad no es valida.')
+			RAISERROR('La descripcion de la actividad no es valida.',16,1)
+		END
+
+		IF TRY_CONVERT(decimal,@Costo_Soc) IS NULL 
+		BEGIN
+			PRINT('El costo no se puede transformar en decimal')
+			RAISERROR('El costo no se puede transformar en decimal',16,1)
+		END
+
+		IF @Costo_Soc < 0
+		BEGIN
+			PRINT('El costo no puede ser negativo')
+			RAISERROR('El costo no puede ser negativo',16,1)
+		END
+
+		IF TRY_CONVERT(decimal,@Costo_No_Soc) IS NULL 
+		BEGIN
+			PRINT('El costo no se puede transformar en decimal')
+			RAISERROR('El costo no se puede transformar en decimal',16,1)
+		END
+
+		IF @Costo_No_Soc < 0
+		BEGIN
+			PRINT('El costo no puede ser negativo')
+			RAISERROR('El costo no puede ser negativo',16,1)
+		END
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo en la creacion de Actividad',16,1)
+			RETURN;
+		END
+	END CATCH
+	INSERT INTO Activity.Actividad_Extra(Nombre,Descr,Costo_Soc, Costo)
+	VALUES(@Nombre_Actividad,@Desc_Act,@Costo_Soc,@Costo_No_Soc)
+END
+GO
+
+-- Para tabla Actividad_Horario --
+
+CREATE OR ALTER PROCEDURE Activity.Agr_Horario
+	@Id_Actividad INTEGER,
+	@Id_Categoria INTEGER,
+	@Horario TIME,
+	@Dias VARCHAR(100)
+AS
+BEGIN
+	BEGIN TRY
+		DECLARE @Temporal TABLE (Dia VARCHAR(100))
+		DECLARE @Normalizados VARCHAR(100) = ''
+		IF TRY_CONVERT(INT,@Id_Actividad) IS NULL
+		BEGIN
+			PRINT('El codigo de actividad no es valido')
+			RAISERROR('El codigo de actividad no es valido',16,1)
+		END
+
+		IF NOT EXISTS (SELECT 1 FROM Activity.Actividad WHERE Id_Actividad = @Id_Actividad)
+		BEGIN	
+			PRINT('No existe actividad con este codigo')
+			RAISERROR('No existe actividad con este codigo',16,1)
+		END
+
+		IF TRY_CONVERT(INT,@Id_Categoria) IS NULL
+		BEGIN
+			PRINT('El codigo de categoria no es valido')
+			RAISERROR('El codigo de categoria no es valido',16,1)
+		END
+
+		IF NOT EXISTS (SELECT 1 FROM Groups.Categoria WHERE Id_Categoria = @Id_Categoria)
+		BEGIN	
+			PRINT('No existe categoria con este codigo')
+			RAISERROR('No existe categoria con este codigo',16,1)
+		END
+
+		IF @Horario NOT LIKE '[0-2][0-9]:[0-5][0-9]' OR LEN(@Horario) != 5
+		BEGIN 
+			PRINT('Por favor utilize formato hh:mm')
+			SET @Horario = CONVERT(VARCHAR(5), @Horario, 108)
+		END
+
+		IF @Dias LIKE '%[^a-zA-Z,]%'
+		BEGIN
+			PRINT('Los dias contienen caracteres no validos (utilice una coma como separador)')
+			RAISERROR('Los dias contienen caracteres no validos (utilice una coma como separador)',16,1)
+		END
+		
+		--Separamos el string en los dias, partimos los mismos para normalizarlos y luego los volvemos a juntar--
+
+		INSERT INTO @Temporal
+		SELECT value FROM string_split(@Dias, ',')
+
+		SELECT @Normalizados = STRING_AGG(UPPER(LEFT(Dia,1)) + LOWER(SUBSTRING(Dia, 2,LEN(Dia))), ',')
+		FROM @Temporal
+
+		IF EXISTS
+		(
+			SELECT 1 
+			FROM string_split(@Normalizados, ',') AS d
+			WHERE d.value NOT IN(
+				'Lunes','Martes','Miercoles','Jueves','Viernes','Sabado','Domingo')
+		)
+		BEGIN
+			PRINT('Se ingreso un dia invalido')
+			RAISERROR('Se ingreso un dia invalido',16,1)
+		END
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo en la creacion de Horario',16,1)
+			RETURN;
+		END
+	END CATCH
+	INSERT INTO Activity.Horario_Actividad(Id_Actividad,Id_Categoria,Horario,Dias)
+	VALUES (@Id_Actividad, @Id_Categoria, @Horario, @Normalizados)
+END
+GO
+
 CREATE OR ALTER PROCEDURE Activity.Agr_Inscripto_Actividad
 	@Id_Horario INTEGER,
 	@Id_Socio INTEGER
@@ -641,93 +812,4 @@ BEGIN
 END
 GO
 
-		---- Para Tabal Groups ----
-CREATE OR ALTER PROCEDURE Groups.Agr_Miembro_Familia
-	@Id_Socio INT,
-	@Id_Grupo INT
-AS
-BEGIN
-	BEGIN TRY
-		IF NOT EXISTS (SELECT 1 FROM Groups.Grupo_Familiar WHERE Id_Grupo_Familiar = @Id_Grupo)-- Validar existencia del grupo familiar
-		BEGIN
-			PRINT('El grupo familiar no existe')
-			RAISERROR('hubo un error ya que no existe el grupo familiar', 16, 1)
-		END
 
-		IF NOT EXISTS (SELECT 1 FROM Person.Socio WHERE Id_Socio = @Id_Socio)-- Validar existencia del socio
-		BEGIN
-			PRINT('El socio no existe')
-			RAISERROR('hubo un error ya que no existe el socio', 16, 1)
-		END
-
-		IF EXISTS (SELECT 1 FROM Groups.Miembro_Familia WHERE Id_Socio = @Id_Socio)-- Validar que el socio no pertenezca ya a un grupo
-		BEGIN
-			PRINT('El socio ya pertenece a un grupo familiar')
-			RAISERROR('hubo un error ya que pertenece a un grupo familiar', 16, 1)
-		END
-
-		INSERT INTO Groups.Miembro_Familia (Id_Socio, Id_Familia)-- Insertar relación
-		VALUES (@Id_Socio, @Id_Grupo)
-
-	END TRY
-	BEGIN CATCH
-		IF ERROR_SEVERITY() > 10
-		BEGIN
-			RAISERROR('Ocurrió un error al vincular el socio al grupo familiar', 16, 1)
-			RETURN
-		END
-	END CATCH
-END
-GO
-
-CREATE OR ALTER PROCEDURE Groups.Agr_Grupo_Familiar
-	@Nombre_Familia VARCHAR(50),
-	@Id_Socio INT  -- socio que se va a asociar al grupo recién creado
-AS
-BEGIN
-	BEGIN TRY
-		DECLARE @Id_Grupo INT
-
-		SET @Nombre_Familia = TRIM(@Nombre_Familia)	-- Validación nombre
-		IF @Nombre_Familia = '' OR LEN(@Nombre_Familia) > 50
-		BEGIN
-			PRINT('Nombre de familia inválido')
-			RAISERROR('.', 16, 1)
-		END
-
-		
-		IF NOT EXISTS (SELECT 1 FROM Person.Socio WHERE Id_Socio = @Id_Socio)-- Validar que el socio exista y no esté ya en un grupo
-		BEGIN
-			PRINT('El socio no existe')
-			RAISERROR('.', 16, 1)
-		END
-
-		IF EXISTS (
-			SELECT 1 FROM Groups.Miembro_Familia WHERE Id_Socio = @Id_Socio
-		)
-		BEGIN
-			PRINT('El socio ya pertenece a un grupo familiar')
-			RAISERROR('.', 16, 1)
-		END
-
-		INSERT INTO Groups.Grupo_Familiar (Nombre_Familia)-- Crear grupo
-		VALUES (@Nombre_Familia)
-
-		SET @Id_Grupo = SCOPE_IDENTITY()
-
-		EXEC Groups.Agr_Miembro_Familia-- Asociar al socio al nuevo grupo
-			@Id_Socio = @Id_Socio,
-			@Id_Grupo = @Id_Grupo
-
-		RETURN @Id_Grupo
-	END TRY
-	BEGIN CATCH
-		IF ERROR_SEVERITY() > 10
-		BEGIN
-			RAISERROR('Error al crear grupo familiar', 16, 1)
-			RETURN
-		END
-	END CATCH
-END
-GO
->>>>>>> Stashed changes
