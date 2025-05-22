@@ -283,6 +283,7 @@ BEGIN
 	(
 		Id_Horario INT,
 		Id_Socio INT,
+		Fecha_Inscripcion DATE,
 		CONSTRAINT FK_Inscripto_Horario
 		FOREIGN KEY (Id_Horario) REFERENCES Activity.Horario_Actividad(Id_Horario),
 		CONSTRAINT FK_Inscripto_Socio

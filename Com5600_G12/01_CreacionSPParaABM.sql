@@ -601,4 +601,43 @@ GO
 
 -- Para tabla Inscripto_Actividad --
 
-CREATE OR ALTER PROCEDURE
+CREATE OR ALTER PROCEDURE Inscripto_Actividad
+	@Id_Horario INTEGER,
+	@Id_Socio INTEGER
+AS
+BEGIN
+	BEGIN TRY
+		IF TRY_CONVERT(INT,@Id_Horario) IS NULL
+		BEGIN
+			PRINT('El Id de horario ingresado no es un numero')
+			RAISERROR('El Id de horario ingresado no es un numero',16,1)
+		END
+
+		IF NOT EXISTS (SELECT 1 FROM Activity.Horario_Actividad WHERE Id_Horario = @Id_Horario)
+		BEGIN
+			PRINT('El Id de horario ingresado no existe')
+			RAISERROR('El Id de horario ingresado no existe',16,1)
+		END
+
+		IF TRY_CONVERT(INT,@Id_Socio) IS NULL
+		BEGIN
+			PRINT('El Id de socio ingresado no es un numero')
+			RAISERROR('El Id de socio ingresado no es un numero',16,1)
+		END
+
+		IF NOT EXISTS (SELECT 1 FROM Person.Socio WHERE Id_Socio = @Id_Socio)
+		BEGIN
+			PRINT('El Id de socio ingresado no existe')
+			RAISERROR('El Id de socio ingresado no existe',16,1)
+		END
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo en la creacion de Horario',16,1)
+			RETURN;
+		END
+	END CATCH
+	INSERT INTO Activity.Inscripto_Actividad(Id_Horario, Id_Socio)
+	VALUES (@Id_Horario, @Id_Socio)
+END
