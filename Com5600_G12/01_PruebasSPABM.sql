@@ -60,7 +60,6 @@ EXEC Person.Borrar_Persona @Id_Persona = @IdPersona;
 SELECT * FROM Person.Persona
 
 
-
 ------------ Casos Erroneos ----------------
 
 EXEC Person.Agr_Persona --Nombre con Numeros
@@ -143,24 +142,72 @@ EXEC Person.Agr_Persona --DNI Vacio
     @Telefono_Contacto = '1122334455',
     @DNI = ''
 
-SELECT * FROM Person.Persona
-
--- Borrar persona --
-
-
-
-
-
 ---------------------------------------------- Para Tabla Tutor ----------------------------------------------
--- CASO CORRECTO: tutor con datos válidos
-EXEC Person.Agr_Tutor
-	@Nombre = 'Pedro',
-	@Apellido = 'Melissari',
-	@DNI = '46912033',
-	@Email = 'melissaripedro@gmail.com',
-	@Fecha_Nacimiento = '2005-07-22',
-	@Telefono_Contacto = '3773620337',
-	@Parentesco = 'Padre'
+/* DELETE FROM Person.Tutor
+DBCC CHECKIDENT ('Person.Tutor', RESEED, 0); */
+
+-- Alta de tutor
+DECLARE @Id_Tutor INT, @IdPersona_Tutor INT;
+
+EXEC @Id_Tutor = Person.Agr_Tutor
+    @Nombre = 'Roxana',
+    @Apellido = 'Gomez',
+    @DNI = '88331122',
+    @Email = 'roxana.gomez@mail.com',
+    @Fecha_Nacimiento = '1980-08-12',
+    @Telefono_Contacto = '1144556677',
+    @Parentesco = 'Madre';
+
+-- Obtener el Id_Persona correspondiente a ese tutor
+SELECT @IdPersona_Tutor = Id_Persona FROM Person.Tutor WHERE Id_Tutor = @Id_Tutor;
+
+-- Mostrar persona y tutor después del alta
+SELECT * FROM Person.Persona WHERE Id_Persona = @IdPersona_Tutor;
+SELECT * FROM Person.Tutor WHERE Id_Tutor = @Id_Tutor;
+
+-- Modificar nombre y email (con Modificar_Persona)
+EXEC Person.Modificar_Persona
+    @Id_Persona = @IdPersona_Tutor,
+    @Nombre = 'Roxi',
+    @Email = 'roxigomez@mail.com';
+
+-- Modificar parentesco (con Modificar_Tutor)
+EXEC Person.Modificar_Tutor
+    @Id_Tutor = @Id_Tutor,
+    @Parentesco = 'Tía';
+
+-- Ver cambios aplicados
+SELECT * FROM Person.Persona WHERE Id_Persona = @IdPersona_Tutor;
+SELECT * FROM Person.Tutor WHERE Id_Tutor = @Id_Tutor;
+
+-- Crear socio menor con ese tutor (para probar restricción)
+EXEC Person.Agr_Socio
+    @Nombre = 'Lautaro',
+    @Apellido = 'Gomez',
+    @DNI = '99887755',
+    @Email = 'lautaro.gomez@mail.com',
+    @Fecha_Nacimiento = '2015-10-15',
+    @Telefono_Contacto = '1166778899',
+    @Telefono_Contacto_Emg = '1199887766',
+    @Obra_Social = '',
+    @Nro_Socio_Obra = '',
+    @Id_Tutor = @Id_Tutor;
+
+-- Intentar borrar tutor (debe fallar por tener un menor a cargo)
+EXEC Person.Borrar_Tutor @Id_Persona = @IdPersona_Tutor;
+
+-- Borrar al socio para liberar al tutor
+DECLARE @IdSocio INT;
+SELECT TOP 1 @IdSocio = Id_Socio FROM Person.Socio WHERE Id_Tutor = @Id_Tutor;
+EXEC Person.Borrar_Socio @Id_Socio = @IdSocio;
+
+-- Ahora sí: borrar al tutor
+EXEC Person.Borrar_Tutor @Id_Persona = @IdPersona_Tutor;
+
+-- Verificar que fue eliminado correctamente
+SELECT * FROM Person.Tutor WHERE Id_Tutor = @Id_Tutor;
+SELECT * FROM Person.Persona WHERE Id_Persona = @IdPersona_Tutor;
+
 
 -- CASO ERROR: parentesco inválido (con números)
 EXEC Person.Agr_Tutor
@@ -171,16 +218,6 @@ EXEC Person.Agr_Tutor
 	@Fecha_Nacimiento = '2001-06-16',
 	@Telefono_Contacto = '1122112255',
 	@Parentesco = 'Padre123'
-
--- CASO ERROR: tutor ya existe
-EXEC Person.Agr_Tutor
-	@Nombre = 'Pedro',
-	@Apellido = 'Melissari',
-	@DNI = '46912033',
-	@Email = 'melissaripedro@gmail.com',
-	@Fecha_Nacimiento = '2005-07-22',
-	@Telefono_Contacto = '3773620337',
-	@Parentesco = 'Padre'
 
 ---------------------------------------------- Para Tabla Socios ----------------------------------------------
 
@@ -197,31 +234,120 @@ INSERT INTO Groups.Categoria (Nombre_Cat, EdadMin, EdadMax, Descr, Costo)
 VALUES ('Adultos', 18, 99, 'Mayores de edad', 1500);
 
 
--- CASO CORRECTO: menor de edad con tutor válido
-EXEC Person.Agr_Socio
-	@Nombre = 'Juan',
-	@Apellido = 'Medina',
-	@Email = 'Medina@CABJ.com',
-	@Fecha_Nacimiento = '2011-6-26',
-	@Telefono_Contacto = '1122334455',
-	@DNI = '46682620',
-	@Telefono_Contacto_Emg = '1122334455',
-	@Obra_Social ='OSDE',
-	@Nro_Socio_Obra = '1',
-	@Id_Tutor = '1' -- suponiendo que el tutor ya fue creado
+-------------- SOCIO MAYOR SIN TUTOR
+-- Alta de socio mayor
+DECLARE @IdPersona_Socio INT, @IdSocio INT;
 
--- CASO CORRECTO: mayor de edad sin tutor
-EXEC Person.Agr_Socio
-	@Nombre = 'Federico',
-	@Apellido = 'Del Valle',
-	@Email = 'fededelvalle@gmail.com',
-	@Fecha_Nacimiento = '2001-06-16',
-	@Telefono_Contacto = '1144556677',
-	@DNI = '43935693',
-	@Telefono_Contacto_Emg = '1199887766',
-	@Obra_Social = 'SWISS MEDICAL',
-	@Nro_Socio_Obra = '1',
-	@Id_Tutor = NULL
+EXEC @IdSocio = Person.Agr_Socio
+    @Nombre = 'Federico',
+    @Apellido = 'Del Valle',
+    @DNI = '77777777',
+    @Email = 'federico.dv@mail.com',
+    @Fecha_Nacimiento = '1995-06-16',
+    @Telefono_Contacto = '1144556677',
+    @Telefono_Contacto_Emg = '1199887766',
+    @Obra_Social = '',
+    @Nro_Socio_Obra = '',
+    @Id_Tutor = NULL;
+
+-- Obtener Id_Persona asociado
+SELECT @IdPersona_Socio = Id_Persona FROM Person.Socio WHERE Id_Socio = @IdSocio;
+
+-- Verificar alta
+SELECT * FROM Person.Persona WHERE Id_Persona = @IdPersona_Socio;
+SELECT * FROM Person.Socio WHERE Id_Socio = @IdSocio;
+
+-- Modificar datos de persona
+EXEC Person.Modificar_Persona
+    @Id_Persona = @IdPersona_Socio,
+    @Nombre = 'Fede',
+    @Email = 'fede.dv@mail.com';
+
+-- Modificar datos de socio
+EXEC Person.Modificar_Socio
+    @Id_Socio = @IdSocio,
+    @Obra_Social = 'OSDE',
+    @Nro_Socio_Obra = '12345678',
+    @Telefono_Contacto_Emg = '1188112211';
+
+-- Verificar cambios
+SELECT * FROM Person.Persona WHERE Id_Persona = @IdPersona_Socio;
+SELECT * FROM Person.Socio WHERE Id_Socio = @IdSocio;
+
+-- Borrar socio
+EXEC Person.Borrar_Socio @Id_Socio = @IdSocio;
+SELECT * FROM Person.Socio WHERE Id_Socio = @IdSocio;
+SELECT * FROM Person.Persona WHERE Id_Persona = @IdPersona_Socio;
+
+-------------
+
+------------- SOCIO MENOR CON TUTOR
+
+-- Alta del tutor
+DECLARE @Id_Tutor INT, @IdPersona_Tutor INT;
+
+EXEC @Id_Tutor = Person.Agr_Tutor
+    @Nombre = 'Romina',
+    @Apellido = 'Salas',
+    @DNI = '88664433',
+    @Email = 'romina.salas@mail.com',
+    @Fecha_Nacimiento = '1982-03-10',
+    @Telefono_Contacto = '1144998811',
+    @Parentesco = 'Madre';
+
+-- Obtener Id_Persona asociado al tutor
+SELECT @IdPersona_Tutor = Id_Persona FROM Person.Tutor WHERE Id_Tutor = @Id_Tutor;
+
+-- Alta del socio menor
+DECLARE @Id_SocioMenor INT, @IdPersona_SocioMenor INT;
+
+EXEC @Id_SocioMenor = Person.Agr_Socio
+    @Nombre = 'Camila',
+    @Apellido = 'Salas',
+    @DNI = '77889955',
+    @Email = 'camila.salas@mail.com',
+    @Fecha_Nacimiento = '2012-11-20',
+    @Telefono_Contacto = '1166778899',
+    @Telefono_Contacto_Emg = '1199887766',
+    @Obra_Social = '',
+    @Nro_Socio_Obra = '',
+    @Id_Tutor = @Id_Tutor;
+
+-- Obtener Id_Persona
+SELECT @IdPersona_SocioMenor = Id_Persona FROM Person.Socio WHERE Id_Socio = @Id_SocioMenor;
+
+-- Modificar datos de persona
+EXEC Person.Modificar_Persona
+    @Id_Persona = @IdPersona_SocioMenor,
+    @Nombre = 'Cami',
+    @Email = 'cami.salas@mail.com';
+
+-- Modificar datos de socio menor
+EXEC Person.Modificar_Socio
+    @Id_Socio = @Id_SocioMenor,
+    @Obra_Social = 'Swiss Medical',
+    @Nro_Socio_Obra = '447788',
+    @Telefono_Contacto_Emg = '1122001199',
+    @Id_Tutor = @Id_Tutor;
+
+-- Verificación
+SELECT * FROM Person.Persona WHERE Id_Persona = @IdPersona_SocioMenor;
+SELECT * FROM Person.Socio WHERE Id_Socio = @Id_SocioMenor;
+
+-- Probar restricción de tutor no borrable
+EXEC Person.Borrar_Tutor @Id_Persona = @IdPersona_Tutor; -- debería fallar
+
+-- Borrar socio menor
+EXEC Person.Borrar_Socio @Id_Socio = @Id_SocioMenor;
+
+-- Ahora sí: borrar tutor
+EXEC Person.Borrar_Tutor @Id_Persona = @IdPersona_Tutor;
+
+-- Verificación final
+SELECT * FROM Person.Tutor WHERE Id_Tutor = @Id_Tutor;
+SELECT * FROM Person.Persona WHERE Id_Persona = @IdPersona_Tutor;
+
+-------------
 
 -- CASO ERROR: menor sin tutor
 EXEC Person.Agr_Socio
@@ -253,236 +379,250 @@ EXEC Person.Agr_Socio
 ----------------------------------------------------------------------------------------------------------
 --------------------------------------------- SCHEMA PAYMENT ---------------------------------------------
 
-------------------------------------------- Para Tabla Factura -------------------------------------------
+-- REFERENCIA DETALLE
 
--- CASO CORRECTO
-EXEC Payment.Agr_Factura
-    @Id_Persona = 1, -- debe existir en Person.Persona
-    @Fecha_Vencimiento = '2025-06-01',
-    @Segundo_Vencimiento = '2025-06-15',
-    @Total = 1500,
-    @Estado_Factura = 'Emitida';
+-- Agregar Referencia válida
+EXEC Payment.Agr_Referencia_Detalle
+    @Referencia = 300,
+    @Descripcion = 'Patín artístico';
 
--- CASO ERROR: Persona inexistente
-EXEC Payment.Agr_Factura
-    @Id_Persona = 999,
-    @Fecha_Vencimiento = '2025-06-01',
-    @Segundo_Vencimiento = '2025-06-15',
-    @Total = 1500,
-    @Estado_Factura = 'Emitida';
+-- Modificar descripción
+EXEC Payment.Modificar_Referencia_Detalle
+    @Referencia = 300,
+    @Descripcion = 'Patinaje artístico';
 
--- CASO ERROR: Total inválido
+-- Intento de modificación inválida
+EXEC Payment.Modificar_Referencia_Detalle
+    @Referencia = 300,
+    @Descripcion = ''; -- vacía
+
+-- Borrar referencia
+EXEC Payment.Borrar_Referencia_Detalle
+    @Referencia = 300;
+
+SELECT * FROM Payment.Referencia_Detalle WHERE Referencia = 300;
+
+---------------------------------------------------------------------------
+
+-- FACTURA
+
+-- Agregar factura
 EXEC Payment.Agr_Factura
     @Id_Persona = 1,
     @Fecha_Vencimiento = '2025-06-01',
     @Segundo_Vencimiento = '2025-06-15',
-    @Total = -50,
+    @Total = 3000,
     @Estado_Factura = 'Emitida';
 
-------------------------------------------- Para Tabla Detalle Factura -------------------------------------------
+-- Obtener ID
+DECLARE @Id_Factura INT = SCOPE_IDENTITY();
 
--- Carga de una familia ficticia
-EXEC Groups.Agr_Grupo_Familiar
-	@Nombre_Familia = 'Familia López',
-	@Id_Socio = '1'
+-- Modificar factura
+EXEC Payment.Modificar_Factura
+    @Id_Factura = @Id_Factura,
+    @Total = 3500,
+    @Estado_Factura = 'Pagada';
 
--- Otra familia opcional
-INSERT INTO Groups.Grupo_Familiar (Nombre_Familia)
-VALUES ('Familia Melissari');
+-- Borrar factura
+EXEC Payment.Borrar_Factura @Id_Factura = @Id_Factura;
 
--- CASO CORRECTO
+SELECT * FROM Payment.Factura WHERE Id_Factura = @Id_Factura;
+
+---------------------------------------------------------------------------
+
+-- DETALLE FACTURA
+
+-- Prerrequisito: crear factura y referencia
+DECLARE @FacturaDF INT;
+EXEC Payment.Agr_Factura @Id_Persona = 1, @Fecha_Vencimiento = '2025-07-01', @Segundo_Vencimiento = '2025-07-15', @Total = 1000, @Estado_Factura = 'Emitida';
+SET @FacturaDF = SCOPE_IDENTITY();
+EXEC Payment.Agr_Referencia_Detalle @Referencia = 301, @Descripcion = 'Gimnasia rítmica';
+
+-- Agregar detalle
 EXEC Payment.Agr_Detalle_Factura
-    @Id_Factura = 1,
-    @Id_Detalle = 1, -- debe existir en Referencia_Detalle
-    @Concepto = 'Cuota de abril',
-    @Monto = 1200,
-    @Descuento_Familiar = 10,
-    @Id_Familia = 1,
-    @Descuento_Act = 5,
+    @Id_Factura = @FacturaDF,
+    @Id_Detalle = 301,
+    @Concepto = 'Cuota Julio',
+    @Monto = 1000,
+    @Descuento_Familiar = 0,
+    @Id_Familia = NULL,
+    @Descuento_Act = 0,
     @Descuento_Lluvia = 0;
 
--- CASO ERROR: Factura no existe
-EXEC Payment.Agr_Detalle_Factura
-    @Id_Factura = 999,
-	@Id_Detalle = 1, 
-    @Concepto = 'Cuota abril',
-    @Monto = 1200,
-    @Descuento_Familiar = 10,
-    @Id_Familia = 1,
-    @Descuento_Act = 5,
-    @Descuento_Lluvia = 0;
+-- Modificar detalle
+EXEC Payment.Modificar_Detalle_Factura
+    @Id_Factura = @FacturaDF,
+    @Id_Detalle = 301,
+    @Concepto = 'Cuota Julio Modificada',
+    @Monto = 900;
 
--- CASO ERROR: Monto negativo
-EXEC Payment.Agr_Detalle_Factura
-    @Id_Factura = 1,
-	@Id_Detalle = 1, 
-    @Concepto = 'Cuota abril',
-    @Monto = -500,
-    @Descuento_Familiar = 10,
-    @Id_Familia = 1,
-    @Descuento_Act = 5,
-    @Descuento_Lluvia = 0;
+-- Borrar detalle
+EXEC Payment.Borrar_Detalle_Factura
+    @Id_Factura = @FacturaDF,
+    @Id_Detalle = 301;
 
------------------------------------ Para Tabla Referencia_Detalle -------------------------------------
+SELECT * FROM Payment.Detalle_Factura WHERE Id_Factura = @FacturaDF;
+---------------------------------------------------------------------------
 
--- CASO CORRECTO
-EXEC Payment.Agr_Referencia_Detalle
-    @Referencia = 200,
-    @Descripcion = 'Fútbol infantil';
+-- PAGO
 
--- CASO ERROR: Descripción vacía
-EXEC Payment.Agr_Referencia_Detalle
-    @Referencia = 201,
-    @Descripcion = '';
+-- Prerrequisito: crear factura
+DECLARE @FacturaPago INT;
+EXEC Payment.Agr_Factura
+    @Id_Persona = 1,
+    @Fecha_Vencimiento = '2025-08-01',
+    @Segundo_Vencimiento = '2025-08-15',
+    @Total = 1500,
+    @Estado_Factura = 'Emitida';
+SET @FacturaPago = SCOPE_IDENTITY();
 
--- CASO ERROR: Tipo inválido
-EXEC Payment.Agr_Referencia_Detalle
-    @Referencia = 502,
-    @Descripcion = 'Yoga adultos';
-
-------------------------------------------- Para Tabla Pago -------------------------------------------
-
--- CASO CORRECTO
+-- Agregar pago
 EXEC Payment.Agr_Pago
-    @Id_Factura = 1,
+    @Id_Factura = @FacturaPago,
     @Medio_Pago = 'Tarjeta',
     @Monto = 1000,
     @Reembolso = 0,
     @Cantidad_Pago = 1,
     @Pago_Cuenta = 0;
 
--- CASO ERROR: Medio de pago vacío
-EXEC Payment.Agr_Pago
-    @Id_Factura = 1,
-    @Medio_Pago = '',
-    @Monto = 1000,
-    @Reembolso = 0,
-    @Cantidad_Pago = 1,
-    @Pago_Cuenta = 0;
+-- Modificar pago
+EXEC Payment.Modificar_Pago
+    @Id_Factura = @FacturaPago,
+    @Medio_Pago = 'Transferencia',
+    @Monto = 1200;
 
--- CASO ERROR: Monto cero
-EXEC Payment.Agr_Pago
-    @Id_Factura = 1,
-    @Medio_Pago = 'Tarjeta',
-    @Monto = 0,
-    @Reembolso = 0,
-    @Cantidad_Pago = 1,
-    @Pago_Cuenta = 0;
+-- Borrar pago
+EXEC Payment.Borrar_Pago @Id_Factura = @FacturaPago;
 
-------------------------------------------- Para Tabla Morosidad -------------------------------------------
+SELECT * FROM Payment.Pago WHERE Id_Factura = @FacturaPago;
 
--- CASO CORRECTO
+---------------------------------------------------------------------------
+
+-- MOROSIDAD
+
+-- Prerrequisito: factura vencida
+DECLARE @FacturaMoro INT;
+EXEC Payment.Agr_Factura
+    @Id_Persona = 1,
+    @Fecha_Vencimiento = '2025-05-01',
+    @Segundo_Vencimiento = '2025-05-15',
+    @Total = 1000,
+    @Estado_Factura = 'Emitida';
+SET @FacturaMoro = SCOPE_IDENTITY();
+
+-- Agregar morosidad
 EXEC Payment.Agr_Morosidad
-    @Id_Factura = 1,
-    @Segundo_Vencimiento = '2025-06-30',
+    @Id_Factura = @FacturaMoro,
+    @Segundo_Vencimiento = '2025-05-30',
     @Recargo = 200,
     @Bloqueado = 1,
-    @Fecha_Bloqueo = '2025-07-01';
+    @Fecha_Bloqueo = '2025-06-01';
 
--- CASO ERROR: Factura inexistente
-EXEC Payment.Agr_Morosidad
-    @Id_Factura = 999,
-    @Segundo_Vencimiento = '2025-06-30',
-    @Recargo = 200,
-    @Bloqueado = 1,
-    @Fecha_Bloqueo = '2025-07-01';
+-- Modificar morosidad
+EXEC Payment.Modificar_Morosidad
+    @Id_Factura = @FacturaMoro,
+    @Recargo = 250,
+    @Bloqueado = 0;
 
--- CASO ERROR: Recargo negativo
-EXEC Payment.Agr_Morosidad
-    @Id_Factura = 1,
-    @Segundo_Vencimiento = '2025-06-30',
-    @Recargo = -100,
-    @Bloqueado = 1,
-    @Fecha_Bloqueo = '2025-07-01';
+-- Borrar morosidad
+EXEC Payment.Borrar_Morosidad @Id_Factura = @FacturaMoro;
 
-------------------------------------------- Para Tabla Cuenta -------------------------------------------
--- CASO CORRECTO
+SELECT * FROM Payment.Morosidad WHERE Id_Factura = @FacturaMoro;
+
+---------------------------------------------------------------------------
+
+-- CUENTA
+
+-- Agregar cuenta
 EXEC Payment.Agr_Cuenta
     @Id_Persona = 1,
-    @SaldoCuenta = 2000;
+    @SaldoCuenta = 2500;
 
--- CASO ERROR: Ya existe la cuenta
-EXEC Payment.Agr_Cuenta
+-- Modificar cuenta
+EXEC Payment.Modificar_Cuenta
     @Id_Persona = 1,
     @SaldoCuenta = 3000;
 
--- CASO ERROR: Saldo negativo
-EXEC Payment.Agr_Cuenta
-    @Id_Persona = 2,
-    @SaldoCuenta = -100;
+-- Borrar cuenta
+EXEC Payment.Borrar_Cuenta @Id_Persona = 1;
 
+SELECT * FROM Payment.Cuenta WHERE Id_Persona = 1;
 
-------------------------------------------- Para Tabla Tipo Medio -------------------------------------------
--- CASO CORRECTO
+---------------------------------------------------------------------------
+
+-- TIPO MEDIO
+
+-- Agregar tipo medio
 EXEC Payment.Agr_TipoMedio
-    @Nombre_Medio = 'Débito automático',
-    @Datos_Necesarios = 'CBU, Banco, Titular';
+    @Nombre_Medio = 'Crédito',
+    @Datos_Necesarios = 'Número, Vencimiento, CVV';
 
--- CASO ERROR: Nombre muy largo
-EXEC Payment.Agr_TipoMedio
-    @Nombre_Medio = 'EsteNombreEsMuyLargoParaElCampo',
-    @Datos_Necesarios = 'Tarjeta, Vto, CVV';
+-- Obtener ID
+DECLARE @IdTipoMedio INT = SCOPE_IDENTITY();
 
-------------------------------------------- Para Tabla Medio Pago -------------------------------------------
--- CASO CORRECTO
+-- Modificar tipo medio
+EXEC Payment.Modificar_TipoMedio
+    @Id_TipoMedio = @IdTipoMedio,
+    @Nombre_Medio = 'Crédito Modificado',
+    @Datos_Necesarios = 'Tarjeta, CVV';
+
+-- Borrar tipo medio
+EXEC Payment.Borrar_TipoMedio @Id_TipoMedio = @IdTipoMedio;
+
+SELECT * FROM Payment.TipoMedio WHERE Id_TipoMedio = @IdTipoMedio;
+
+---------------------------------------------------------------------------
+
+-- MEDIO PAGO
+
+-- Agregar medio de pago
 EXEC Payment.Agr_Medio_Pago
     @Id_Persona = 1,
     @Id_TipoMedio = 1,
     @Datos_Medio = 'CBU:12345678';
 
--- CASO ERROR: Socio inexistente
-EXEC Payment.Agr_Medio_Pago
-    @Id_Persona = 999,
-    @Id_TipoMedio = 1,
-    @Datos_Medio = 'CBU:12345678';
+-- Falta: Modificar / Borrar cuando se implemente
+SELECT * FROM Payment.Medio_Pago WHERE Id_Persona = 1 AND Id_TipoMedio = 1;
 
--- CASO ERROR: TipoMedio inexistente
-EXEC Payment.Agr_Medio_Pago
-    @Id_Persona = 1,
-    @Id_TipoMedio = 999,
-    @Datos_Medio = 'CBU:12345678';
+----------------------------------------------------------------------------------------------------------
+--------------------------------------------- SCHEMA JORNADA ---------------------------------------------
+-- Agregar jornada
+EXEC Jornada.Agr_Jornada
+    @Fecha = '2025-10-01',
+    @Lluvia = 1,
+    @MM = 12.5;
 
-------------------------------------------- Para Tabla Jornada -------------------------------------------
+-- Verificar alta
+SELECT * FROM Jornada.Jornada WHERE Fecha = '2025-10-01';
 
+-- Modificar solo MM
+EXEC Jornada.Modificar_Jornada
+    @Fecha = '2025-10-01',
+    @MM = 15.0;
 
-CREATE OR ALTER PROCEDURE Jornada.Agr_Jornada
-    @Fecha DATE,
-    @Lluvia INT,
-    @MM DECIMAL(10,2)
-AS
-BEGIN
-    BEGIN TRY
-        -- Validar que la fecha no esté duplicada
-        IF EXISTS (SELECT 1 FROM Jornada.Jornada WHERE Fecha = @Fecha)
-        BEGIN
-            PRINT('Ya existe una jornada con esa fecha')
-            RAISERROR('.', 16, 1)
-        END
+-- Modificar solo lluvia
+EXEC Jornada.Modificar_Jornada
+    @Fecha = '2025-10-01',
+    @Lluvia = 0;
 
-        -- Validar rango de lluvia (0 o 1)
-        IF @Lluvia NOT IN (0, 1)
-        BEGIN
-            PRINT('El valor de lluvia debe ser 0 (no llovió) o 1 (sí llovió)')
-            RAISERROR('.', 16, 1)
-        END
+-- Modificación con lluvia inválida
+EXEC Jornada.Modificar_Jornada
+    @Fecha = '2025-10-01',
+    @Lluvia = 2;
 
-        -- Validar MM
-        IF @MM < 0
-        BEGIN
-            PRINT('Los milímetros de lluvia no pueden ser negativos')
-            RAISERROR('.', 16, 1)
-        END
+-- Modificación con mm negativos
+EXEC Jornada.Modificar_Jornada
+    @Fecha = '2025-10-01',
+    @MM = -1;
 
-        -- Insertar jornada
-        INSERT INTO Jornada.Jornada (Fecha, Lluvia, MM)
-        VALUES (@Fecha, @Lluvia, @MM)
-    END TRY
-    BEGIN CATCH
-        IF ERROR_SEVERITY() > 10
-        BEGIN
-            RAISERROR('Error al registrar la jornada', 16, 1)
-        END
-    END CATCH
-END
-GO
+-- Modificación de jornada inexistente
+EXEC Jornada.Modificar_Jornada
+    @Fecha = '2099-01-01',
+    @Lluvia = 1;
+
+-- Borrar jornada
+EXEC Jornada.Borrar_Jornada @Fecha = '2025-10-01';
+
+-- Verificar borrado
+SELECT * FROM Jornada.Jornada WHERE Fecha = '2025-10-01';
 
