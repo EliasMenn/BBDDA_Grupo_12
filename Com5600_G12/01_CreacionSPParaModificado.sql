@@ -164,7 +164,7 @@ BEGIN
 
 		-- Validamos que exista el socio y obtenemos datos necesarios
 		SELECT 
-			@Id_Persona = Id_Persona,
+			@Id_Persona = S.Id_Persona,
 			@Fecha_Nacimiento = P.Fecha_Nacimiento
 		FROM Person.Socio S
 		JOIN Person.Persona P ON S.Id_Persona = P.Id_Persona
@@ -427,7 +427,7 @@ BEGIN
 		DECLARE @ContraseniaHash VARBINARY(32);
 
 		-- Validar que exista el usuario
-		IF NOT EXISTS (SELECT 1 FROM Person.Usuario WHERE Id_Usuario = @Id_Usuario)
+		IF NOT EXISTS (SELECT 1 FROM Person.Usuario WHERE Id_Persona = @Id_Usuario)
 		BEGIN
 			PRINT('No existe un usuario con ese ID');
 			RAISERROR('.', 16, 1);
@@ -449,7 +449,7 @@ BEGIN
 
 			UPDATE Person.Usuario
 			SET Id_Rol = @Id_Rol
-			WHERE Id_Usuario = @Id_Usuario;
+			WHERE Id_Persona= @Id_Usuario;
 		END
 
 		-- Si se quiere actualizar el nombre de usuario
@@ -465,7 +465,7 @@ BEGIN
 
 			IF EXISTS (
 				SELECT 1 FROM Person.Usuario 
-				WHERE Nombre_Usuario = @Nombre_Usuario AND Id_Usuario <> @Id_Usuario
+				WHERE Nombre_Usuario = @Nombre_Usuario AND Id_Persona <> @Id_Usuario
 			)
 			BEGIN
 				PRINT('Ya existe otro usuario con ese nombre');
@@ -474,7 +474,7 @@ BEGIN
 
 			UPDATE Person.Usuario
 			SET Nombre_Usuario = @Nombre_Usuario
-			WHERE Id_Usuario = @Id_Usuario;
+			WHERE Id_Persona = @Id_Usuario;
 		END
 
 		-- Si se quiere actualizar la contraseña
@@ -496,7 +496,7 @@ BEGIN
 			UPDATE Person.Usuario
 			SET Contrasenia = @ContraseniaHash,
 				Vigencia_Contrasenia = @Vigencia
-			WHERE Id_Usuario = @Id_Usuario;
+			WHERE Id_Persona = @Id_Usuario;
 		END
 
 		PRINT('Usuario modificado correctamente.');
@@ -938,7 +938,7 @@ BEGIN
         SET NOCOUNT ON;
 
         -- Verificar existencia
-        IF NOT EXISTS (SELECT 1 FROM Payment.TipoMedio WHERE Id_Tipo_Medio = @Id_Tipo_Medio)
+        IF NOT EXISTS (SELECT 1 FROM Payment.TipoMedio WHERE Id_TipoMedio = @Id_Tipo_Medio)
         BEGIN
             PRINT('No existe un tipo de medio con ese ID');
             RAISERROR('.', 16, 1);
@@ -957,7 +957,7 @@ BEGIN
 
             UPDATE Payment.TipoMedio
             SET Nombre_Medio = @Nombre_Medio
-            WHERE Id_Tipo_Medio = @Id_Tipo_Medio;
+            WHERE Id_TipoMedio = @Id_Tipo_Medio;
         END
 
         -- Actualizar Datos_Necesarios
@@ -965,7 +965,7 @@ BEGIN
         BEGIN
             UPDATE Payment.TipoMedio
             SET Datos_Necesarios = @Datos_Necesarios
-            WHERE Id_Tipo_Medio = @Id_Tipo_Medio;
+            WHERE Id_TipoMedio = @Id_Tipo_Medio;
         END
 
         PRINT('Tipo de medio de pago modificado correctamente.');
@@ -988,7 +988,7 @@ BEGIN
         SET NOCOUNT ON;
 
         -- Validar existencia del medio de pago
-        IF NOT EXISTS (SELECT 1 FROM Payment.Medio_Pago WHERE Id_MedioPago = @Id_MedioPago)
+        IF NOT EXISTS (SELECT 1 FROM Payment.Medio_Pago WHERE Id_Medio_Pago = @Id_MedioPago)
         BEGIN
             PRINT('No existe un medio de pago con ese ID');
             RAISERROR('.', 16, 1);
@@ -1005,7 +1005,7 @@ BEGIN
 
             UPDATE Payment.Medio_Pago
             SET Id_TipoMedio = @Id_TipoMedio
-            WHERE Id_MedioPago = @Id_MedioPago;
+            WHERE Id_Medio_Pago = @Id_MedioPago;
         END
 
         -- Actualizar Datos_Medio si se provee
@@ -1013,7 +1013,7 @@ BEGIN
         BEGIN
             UPDATE Payment.Medio_Pago
             SET Datos_Medio = @Datos_Medio
-            WHERE Id_MedioPago = @Id_MedioPago;
+            WHERE Id_Medio_Pago = @Id_MedioPago;
         END
 
         PRINT('Medio de pago modificado correctamente.');
@@ -1027,7 +1027,7 @@ GO
 
 ---------------------------------------- Para Tabla Cuenta ----------------------------------------
 CREATE OR ALTER PROCEDURE Payment.Modificar_Cuenta
-    @Id_Cuenta INT,
+    @Id_Persona INT,
     @SaldoCuenta DECIMAL(10,2) = NULL
 AS
 BEGIN
@@ -1035,7 +1035,7 @@ BEGIN
         SET NOCOUNT ON;
 
         -- Validar existencia de la cuenta
-        IF NOT EXISTS (SELECT 1 FROM Payment.Cuenta WHERE Id_Cuenta = @Id_Cuenta)
+        IF NOT EXISTS (SELECT 1 FROM Payment.Cuenta WHERE Id_Persona = @Id_Persona)
         BEGIN
             PRINT('No existe una cuenta con ese ID');
             RAISERROR('.', 16, 1);
@@ -1052,7 +1052,7 @@ BEGIN
 
             UPDATE Payment.Cuenta
             SET SaldoCuenta = @SaldoCuenta
-            WHERE Id_Cuenta = @Id_Cuenta;
+            WHERE Id_Persona = @Id_Persona;
         END
 
         PRINT('Cuenta modificada correctamente.');
@@ -1299,7 +1299,7 @@ BEGIN
 	BEGIN TRY
 		SET NOCOUNT ON;
 
-		IF NOT EXISTS (SELECT 1 FROM Activity.Actividad_Extra WHERE Id_Actividad = @Id_Actividad)
+		IF NOT EXISTS (SELECT 1 FROM Activity.Actividad_Extra WHERE Id_Actividad_Extra = @Id_Actividad)
 		BEGIN
 			PRINT('La actividad extra no existe');
 			RAISERROR('.', 16, 1);
@@ -1313,7 +1313,7 @@ BEGIN
 				PRINT('El nombre de la actividad no es válido');
 				RAISERROR('.', 16, 1);
 			END
-			UPDATE Activity.Actividad_Extra SET Nombre = @Nombre_Actividad WHERE Id_Actividad = @Id_Actividad;
+			UPDATE Activity.Actividad_Extra SET Nombre = @Nombre_Actividad WHERE Id_Actividad_Extra = @Id_Actividad;
 		END
 
 		IF @Desc_Act IS NOT NULL AND @Desc_Act <> ''
@@ -1324,7 +1324,7 @@ BEGIN
 				PRINT('La descripción no es válida');
 				RAISERROR('.', 16, 1);
 			END
-			UPDATE Activity.Actividad_Extra SET Descr = @Desc_Act WHERE Id_Actividad = @Id_Actividad;
+			UPDATE Activity.Actividad_Extra SET Descr = @Desc_Act WHERE Id_Actividad_Extra = @Id_Actividad;
 		END
 
 		IF @Costo_Soc IS NOT NULL
@@ -1334,7 +1334,7 @@ BEGIN
 				PRINT('El costo para socios no puede ser negativo');
 				RAISERROR('.', 16, 1);
 			END
-			UPDATE Activity.Actividad_Extra SET Costo_Soc = @Costo_Soc WHERE Id_Actividad = @Id_Actividad;
+			UPDATE Activity.Actividad_Extra SET Costo_Soc = @Costo_Soc WHERE Id_Actividad_Extra = @Id_Actividad;
 		END
 
 		IF @Costo_No_Soc IS NOT NULL
@@ -1344,7 +1344,7 @@ BEGIN
 				PRINT('El costo para no socios no puede ser negativo');
 				RAISERROR('.', 16, 1);
 			END
-			UPDATE Activity.Actividad_Extra SET Costo = @Costo_No_Soc WHERE Id_Actividad = @Id_Actividad;
+			UPDATE Activity.Actividad_Extra SET Costo = @Costo_No_Soc WHERE Id_Actividad_Extra = @Id_Actividad;
 		END
 
 		PRINT('Actividad extra modificada correctamente.');
@@ -1494,7 +1494,7 @@ CREATE OR ALTER PROCEDURE Activity.Modificar_Inscripto_Act_Extra
 	@Id_Actividad_Extra INT,
 	@Id_Persona INT,
 	@Fecha DATE = NULL,
-	@Es_Alquiler INT = NULL
+	@Es_Alquiler INT
 AS
 BEGIN
 	BEGIN TRY
@@ -1503,24 +1503,10 @@ BEGIN
 		-- Validación de existencia
 		IF NOT EXISTS (
 			SELECT 1 FROM Activity.Inscripto_Act_Extra
-			WHERE Id_Actividad_Extra = @Id_Actividad_Extra AND Id_Persona = @Id_Persona)
+			WHERE Id_Act_Extra = @Id_Actividad_Extra AND Id_Persona = @Id_Persona)
 		BEGIN
 			PRINT('No existe esta inscripción a actividad extra');
 			RAISERROR('.', 16, 1);
-		END
-
-		-- Validar y actualizar Es_Alquiler
-		IF @Es_Alquiler IS NOT NULL
-		BEGIN
-			IF @Es_Alquiler NOT IN (0, 1)
-			BEGIN
-				PRINT('El campo Es_Alquiler debe ser 0 o 1');
-				RAISERROR('.', 16, 1);
-			END
-
-			UPDATE Activity.Inscripto_Act_Extra
-			SET Es_Alquiler = @Es_Alquiler
-			WHERE Id_Actividad_Extra = @Id_Actividad_Extra AND Id_Persona = @Id_Persona;
 		END
 
 		-- Validar y actualizar Fecha (solo si es alquiler)
@@ -1542,7 +1528,7 @@ BEGIN
 
 			UPDATE Activity.Inscripto_Act_Extra
 			SET Fecha = @Fecha
-			WHERE Id_Actividad_Extra = @Id_Actividad_Extra AND Id_Persona = @Id_Persona;
+			WHERE Id_Act_Extra = @Id_Actividad_Extra AND Id_Persona = @Id_Persona;
 		END
 
 		PRINT('Inscripción a actividad extra modificada correctamente.');

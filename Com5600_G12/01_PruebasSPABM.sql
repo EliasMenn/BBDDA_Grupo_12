@@ -219,6 +219,7 @@ EXEC Person.Agr_Tutor
 	@Telefono_Contacto = '1122112255',
 	@Parentesco = 'Padre123'
 
+
 ---------------------------------------------- Para Tabla Socios ----------------------------------------------
 
 -- Carga básica de una categoría para menores
@@ -236,7 +237,7 @@ VALUES ('Adultos', 18, 99, 'Mayores de edad', 1500);
 
 -------------- SOCIO MAYOR SIN TUTOR
 -- Alta de socio mayor
-DECLARE @IdPersona_Socio INT, @IdSocio INT;
+DECLARE @IdPersona_Socio INT;
 
 EXEC @IdSocio = Person.Agr_Socio
     @Nombre = 'Federico',
@@ -284,7 +285,6 @@ SELECT * FROM Person.Persona WHERE Id_Persona = @IdPersona_Socio;
 ------------- SOCIO MENOR CON TUTOR
 
 -- Alta del tutor
-DECLARE @Id_Tutor INT, @IdPersona_Tutor INT;
 
 EXEC @Id_Tutor = Person.Agr_Tutor
     @Nombre = 'Romina',
@@ -386,19 +386,20 @@ EXEC Payment.Agr_Referencia_Detalle
     @Referencia = 300,
     @Descripcion = 'Patín artístico';
 
+	DECLARE @Id_Detalle INT = SCOPE_IDENTITY()
 -- Modificar descripción
 EXEC Payment.Modificar_Referencia_Detalle
-    @Referencia = 300,
+    @Id_detalle = @Id_Detalle,
     @Descripcion = 'Patinaje artístico';
 
 -- Intento de modificación inválida
 EXEC Payment.Modificar_Referencia_Detalle
-    @Referencia = 300,
+    @Id_detalle = @Id_Detalle,
     @Descripcion = ''; -- vacía
 
 -- Borrar referencia
 EXEC Payment.Borrar_Referencia_Detalle
-    @Referencia = 300;
+    @Id_Detalle = @Id_Detalle;
 
 SELECT * FROM Payment.Referencia_Detalle WHERE Referencia = 300;
 
@@ -458,8 +459,7 @@ EXEC Payment.Modificar_Detalle_Factura
 
 -- Borrar detalle
 EXEC Payment.Borrar_Detalle_Factura
-    @Id_Factura = @FacturaDF,
-    @Id_Detalle = 301;
+    @Id_Factura = @FacturaDF;
 
 SELECT * FROM Payment.Detalle_Factura WHERE Id_Factura = @FacturaDF;
 ---------------------------------------------------------------------------
@@ -487,7 +487,7 @@ EXEC Payment.Agr_Pago
 
 -- Modificar pago
 EXEC Payment.Modificar_Pago
-    @Id_Factura = @FacturaPago,
+    @Id_Pago = @FacturaPago,
     @Medio_Pago = 'Transferencia',
     @Monto = 1200;
 
@@ -525,7 +525,7 @@ EXEC Payment.Modificar_Morosidad
     @Bloqueado = 0;
 
 -- Borrar morosidad
-EXEC Payment.Borrar_Morosidad @Id_Factura = @FacturaMoro;
+EXEC Payment.Borrar_Moroso @Id_Factura = @FacturaMoro;
 
 SELECT * FROM Payment.Morosidad WHERE Id_Factura = @FacturaMoro;
 
@@ -562,12 +562,12 @@ DECLARE @IdTipoMedio INT = SCOPE_IDENTITY();
 
 -- Modificar tipo medio
 EXEC Payment.Modificar_TipoMedio
-    @Id_TipoMedio = @IdTipoMedio,
+    @Id_Tipo_Medio = @IdTipoMedio,
     @Nombre_Medio = 'Crédito Modificado',
     @Datos_Necesarios = 'Tarjeta, CVV';
 
 -- Borrar tipo medio
-EXEC Payment.Borrar_TipoMedio @Id_TipoMedio = @IdTipoMedio;
+EXEC Payment.Borrar_Tipo_Medio @Id_Tipo = @IdTipoMedio;
 
 SELECT * FROM Payment.TipoMedio WHERE Id_TipoMedio = @IdTipoMedio;
 
@@ -581,7 +581,16 @@ EXEC Payment.Agr_Medio_Pago
     @Id_TipoMedio = 1,
     @Datos_Medio = 'CBU:12345678';
 
--- Falta: Modificar / Borrar cuando se implemente
+DECLARE @Id_MedioPago INT = SCOPE_IDENTITY()
+-- Modificar medio de pago
+EXEC Payment.Modificar_Medio_Pago
+	@Id_MedioPago = 1,
+	@Id_TipoMedio = @Id_MedioPago,
+	@Datos_Medio = 'CBU:87654321'
+
+-- Borrar Medio Pago
+EXEC Payment.Borrar_Medio
+	@Id_Medio = @Id_MedioPago
 SELECT * FROM Payment.Medio_Pago WHERE Id_Persona = 1 AND Id_TipoMedio = 1;
 
 ----------------------------------------------------------------------------------------------------------
