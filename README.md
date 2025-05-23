@@ -36,7 +36,7 @@ Se implementaron procedimientos en los siguientes esquemas:
 
 ## Integrantes - Grupo 12
 
-- DEL VALLE, FEDERICO (43316258)
-- MEDINA, JUAN IGNACIO (46682620)
-- MELISSARI, LUIS PEDRO JOSE (46912033)
-- MENNELLA, ELIAS DAMIAN (46357008)
+- DEL VALLE, FEDERICO (43316258), Nick: Federico Del Valle
+- MEDINA, JUAN IGNACIO (46682620), Nick: JuanMedina613
+- MELISSARI, LUIS PEDRO JOSE (46912033), Nick: FuturoIngPedro
+- MENNELLA, ELIAS DAMIAN (46357008), Nick: EliasMenn
