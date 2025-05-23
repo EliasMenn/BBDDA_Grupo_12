@@ -14,30 +14,54 @@ USE master
 USE Com5600_G12
 GO
 
---Agregar Personas --
---Caso Correcto -- 
 
 
-EXEC Person.Agr_Persona
-	@Nombre = 'Juan',
-    @Apellido = 'Medina',
-    @Email = 'Medina@CABJ.com',
-    @Fecha_Nacimiento = '2011-6-26',
-    @Telefono_Contacto = '1122334455',
-	@DNI = '46682620'
+-- AGREGAR, MODIFICAR y BORRAR Personas --
+/* DELETE FROM Person.Persona
+DBCC CHECKIDENT ('Person.Persona', RESEED, 0); */
 
-SELECT * 
-FROM Person.Persona
+-- Crear persona de prueba
+DECLARE @IdPersona INT;
+EXEC @IdPersona = Person.Agr_Persona
+	@Nombre = 'Pedro',
+	@Apellido = 'Melissari',
+	@DNI = '46912033',
+	@Email = 'pedromelissari@mail.com',
+	@Fecha_Nacimiento = '2005-07-22',
+	@Telefono_Contacto = '1111222233';
 
---Casos Erroneos --
+--  Mostrar antes de modificar
+PRINT ' Persona antes de modificar:';
+SELECT * FROM Person.Persona WHERE Id_Persona = @IdPersona;
 
-EXEC Person.Agr_Persona --DNI Duplicado
-	@Nombre = 'Juan',
-	@Apellido = 'Medina',
-    @Email = 'Medina@CABJ.com',
-    @Fecha_Nacimiento = '2011-6-11',
-    @Telefono_Contacto = '1122334455',
-    @DNI = '46682620'
+-- Modificar nombre, apellido y teléfono
+EXEC Person.Modificar_Persona
+	@Id_Persona = @IdPersona,
+	@Nombre = 'Elias',
+	@Apellido = 'Mennella',
+	@Telefono_Contacto = ''; -- Deberia quedar el mismo
+
+-- Mostrar después
+PRINT ' Persona después de modificar:';
+SELECT * FROM Person.Persona WHERE Id_Persona = @IdPersona;
+
+-- Intento de poner un DNI ya existente (error esperado)
+DECLARE @DNIExistente VARCHAR(10);
+SELECT TOP 1 @DNIExistente = DNI FROM Person.Persona WHERE Id_Persona <> @IdPersona;
+
+EXEC Person.Modificar_Persona
+	@Id_Persona = @IdPersona,
+	@DNI = @DNIExistente; -- DNI duplicado (debe fallar)
+
+-- Borrar persona creada
+EXEC Person.Borrar_Persona @Id_Persona = @IdPersona;
+
+-- Verificar eliminación
+SELECT * FROM Person.Persona
+
+
+
+------------ Casos Erroneos ----------------
 
 EXEC Person.Agr_Persona --Nombre con Numeros
 	@Nombre = 'Elias123',
@@ -118,6 +142,13 @@ EXEC Person.Agr_Persona --DNI Vacio
     @Fecha_Nacimiento = '2004-12-02',
     @Telefono_Contacto = '1122334455',
     @DNI = ''
+
+SELECT * FROM Person.Persona
+
+-- Borrar persona --
+
+
+
 
 
 ---------------------------------------------- Para Tabla Tutor ----------------------------------------------
@@ -252,7 +283,7 @@ EXEC Payment.Agr_Factura
 
 -- Carga de una familia ficticia
 EXEC Groups.Agr_Grupo_Familiar
-	@Nombre_Familia = 'Familia Lopéz',
+	@Nombre_Familia = 'Familia López',
 	@Id_Socio = '1'
 
 -- Otra familia opcional
@@ -411,30 +442,47 @@ EXEC Payment.Agr_Medio_Pago
     @Id_TipoMedio = 999,
     @Datos_Medio = 'CBU:12345678';
 
--- CONTENIDOS TABLAS PAYMENT
+------------------------------------------- Para Tabla Jornada -------------------------------------------
 
--- FACTURAS
-SELECT * FROM Payment.Factura;
 
--- DETALLE DE FACTURA
-SELECT * FROM Payment.Detalle_Factura;
+CREATE OR ALTER PROCEDURE Jornada.Agr_Jornada
+    @Fecha DATE,
+    @Lluvia INT,
+    @MM DECIMAL(10,2)
+AS
+BEGIN
+    BEGIN TRY
+        -- Validar que la fecha no esté duplicada
+        IF EXISTS (SELECT 1 FROM Jornada.Jornada WHERE Fecha = @Fecha)
+        BEGIN
+            PRINT('Ya existe una jornada con esa fecha')
+            RAISERROR('.', 16, 1)
+        END
 
--- REFERENCIA DETALLE
-SELECT * FROM Payment.Referencia_Detalle;
+        -- Validar rango de lluvia (0 o 1)
+        IF @Lluvia NOT IN (0, 1)
+        BEGIN
+            PRINT('El valor de lluvia debe ser 0 (no llovió) o 1 (sí llovió)')
+            RAISERROR('.', 16, 1)
+        END
 
--- MOROSIDAD
-SELECT * FROM Payment.Morosidad;
+        -- Validar MM
+        IF @MM < 0
+        BEGIN
+            PRINT('Los milímetros de lluvia no pueden ser negativos')
+            RAISERROR('.', 16, 1)
+        END
 
--- PAGOS
-SELECT * FROM Payment.Pago;
-
--- TIPO DE MEDIO DE PAGO
-SELECT * FROM Payment.TipoMedio;
-
--- MEDIOS DE PAGO
-SELECT * FROM Payment.Medio_Pago;
-
--- CUENTAS
-SELECT * FROM Payment.Cuenta;
-
+        -- Insertar jornada
+        INSERT INTO Jornada.Jornada (Fecha, Lluvia, MM)
+        VALUES (@Fecha, @Lluvia, @MM)
+    END TRY
+    BEGIN CATCH
+        IF ERROR_SEVERITY() > 10
+        BEGIN
+            RAISERROR('Error al registrar la jornada', 16, 1)
+        END
+    END CATCH
+END
+GO
 
