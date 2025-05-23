@@ -44,14 +44,14 @@ BEGIN
 		END
 		--Limpiamos y Validamos los string--
 
-		IF @Nombre ='' OR @Nombre LIKE '%[^a-zA-Z]%' OR LEN(@Nombre) > 25
+		IF @Nombre ='' OR @Nombre LIKE '%[^a-zA-Z ]%' OR LEN(@Nombre) > 25
 		BEGIN
 			PRINT('El nombre no es valido')
 			RAISERROR('.', 16,1)
 		END
 		SET @Nombre = TRIM(@Nombre);
 
-		IF @Apellido ='' OR @Apellido LIKE '%[^a-zA-Z]%' OR LEN(@Apellido) > 25
+		IF @Apellido ='' OR @Apellido LIKE '%[^a-zA-Z ]%' OR LEN(@Apellido) > 25
 		BEGIN
 			PRINT('El apellido no es valido,')
 			RAISERROR('.', 16,1)
@@ -674,7 +674,7 @@ BEGIN
     BEGIN TRY
         IF NOT EXISTS (SELECT 1 FROM Person.Persona WHERE Id_Persona = @Id_Persona)
         BEGIN
-            PRINT('El socio no existe')
+            PRINT('La persona no existe')
             RAISERROR('.',16,1)
         END
 
@@ -735,7 +735,7 @@ BEGIN
 END
 GO
 
----------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------
 ---------------------------- SCHEMA GROUPS ----------------------------
 
 ---- Para Tabla Miembro Familia ----
@@ -1290,6 +1290,50 @@ BEGIN
     BEGIN CATCH
         IF ERROR_SEVERITY() > 10
             RAISERROR('Error al registrar la referencia del detalle', 16, 1)
+    END CATCH
+END
+GO
+
+-----------------------------------------------------------------------
+---------------------------- SCHEMA JORNADA ---------------------------
+
+CREATE OR ALTER PROCEDURE Jornada.Agr_Jornada
+    @Fecha DATE,
+    @Lluvia INT,
+    @MM DECIMAL(10,2)
+AS
+BEGIN
+    BEGIN TRY
+        -- Validar que la fecha no esté duplicada
+        IF EXISTS (SELECT 1 FROM Jornada.Jornada WHERE Fecha = @Fecha)
+        BEGIN
+            PRINT('Ya existe una jornada con esa fecha')
+            RAISERROR('.', 16, 1)
+        END
+
+        -- Validar rango de lluvia (0 o 1)
+        IF @Lluvia NOT IN (0, 1)
+        BEGIN
+            PRINT('El valor de lluvia debe ser 0 (no llovió) o 1 (sí llovió)')
+            RAISERROR('.', 16, 1)
+        END
+
+        -- Validar MM
+        IF @MM < 0
+        BEGIN
+            PRINT('Los milímetros de lluvia no pueden ser negativos')
+            RAISERROR('.', 16, 1)
+        END
+
+        -- Insertar jornada
+        INSERT INTO Jornada.Jornada (Fecha, Lluvia, MM)
+        VALUES (@Fecha, @Lluvia, @MM)
+    END TRY
+    BEGIN CATCH
+        IF ERROR_SEVERITY() > 10
+        BEGIN
+            RAISERROR('Error al registrar la jornada', 16, 1)
+        END
     END CATCH
 END
 GO
