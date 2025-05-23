@@ -1150,3 +1150,116 @@ BEGIN
 	COMMIT TRANSACTION
 END
 GO
+
+CREATE OR ALTER PROCEDURE Payment.Borrar_Tipo_Medio
+	@Id_Tipo INTEGER
+AS
+BEGIN
+	SET NOCOUNT ON
+	BEGIN TRY
+		BEGIN TRANSACTION
+		IF EXISTS(SELECT 1 FROM Payment.TipoMedio WHERE Id_TipoMedio = @Id_Tipo)
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM Payment.Medio_Pago WHERE Id_TipoMedio = @Id_Tipo)
+			BEGIN
+				DELETE 
+				FROM Payment.TipoMedio
+				WHERE Id_TipoMedio = @Id_Tipo
+			END
+			ELSE
+			BEGIN
+				PRINT('El Tipo de medio tiene uno o mas medios vinculados, no se puede eliminar')
+				RAISERROR('El tipo de medio tiene uno o mas medios vinculados',16,1)
+			END
+		END
+
+		ELSE
+
+		BEGIN
+			PRINT('No se encontro el tipo de medio de pago')
+			RAISERROR('No se encontro el tipo',16,1)
+		END
+
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo durante el borrado de tipo',16,1)
+			IF @@TRANCOUNT > 0
+			BEGIN
+				ROLLBACK TRANSACTION
+			END
+			RETURN;
+		END
+		IF ERROR_SEVERITY() = 10
+		BEGIN
+			COMMIT TRANSACTION
+			RETURN;
+		END
+	END CATCH
+	COMMIT TRANSACTION
+END
+GO
+
+CREATE OR ALTER PROCEDURE Groups.Borrar_Categ
+	@Id_Cat INTEGER
+AS
+BEGIN
+	SET NOCOUNT ON
+	BEGIN TRY
+		BEGIN TRANSACTION
+		DECLARE @Id_Detalle INT
+		IF EXISTS(SELECT 1 FROM Groups.Categoria WHERE Id_Categoria = @Id_Cat)
+		BEGIN
+			IF EXISTS (SELECT 1 FROM Person.Socio WHERE Id_Categoria = @Id_Cat)
+			BEGIN
+				PRINT('La categoria tiene uno o mas socios vinculados')
+				RAISERROR('La categoria tiene uno o mas socios vinculados',16,1)
+			END
+			IF EXISTS (SELECT 1 FROM Activity.Horario_Actividad WHERE Id_Categoria = @Id_Cat)
+			BEGIN
+				PRINT('La categoria tiene uno o mas horarios vinculados')
+				RAISERROR('La categoria tiene uno o mas horarios vinculados',16,1)
+			END
+		END
+		
+		DELETE 
+		FROM Groups.Categoria
+		WHERE Id_Categoria = @Id_Cat
+
+		IF EXISTS(SELECT 1 FROM Payment.Referencia_Detalle WHERE Referencia = @Id_Cat)
+			BEGIN
+				SELECT @Id_Detalle = Id_Detalle
+				FROM Payment.Referencia_Detalle
+				WHERE Referencia = @Id_Cat AND Tipo_Referencia = 1
+
+				EXEC Payment.Borrar_Referencia_Detalle
+					@Id_detalle
+			END
+		ELSE
+
+		BEGIN
+			PRINT('No se encontro el grupo')
+			RAISERROR('No se encontro el grupo',16,1)
+		END
+
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo durante el borrado de tipo',16,1)
+			IF @@TRANCOUNT > 0
+			BEGIN
+				ROLLBACK TRANSACTION
+			END
+			RETURN;
+		END
+		IF ERROR_SEVERITY() = 10
+		BEGIN
+			COMMIT TRANSACTION
+			RETURN;
+		END
+	END CATCH
+	COMMIT TRANSACTION
+END
+GO
