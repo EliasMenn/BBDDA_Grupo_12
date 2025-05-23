@@ -918,18 +918,17 @@ BEGIN
 				BEGIN
 					IF EXISTS(SELECT 1 FROM Activity.Actividad WHERE Id_Actividad = @Referencia)
 					BEGIN
-						PRINT('Hay categorias vinculadas a esta referencia')
+						PRINT('Hay actividades vinculadas a esta referencia')
 						RAISERROR('Hay categorias vinculadas a esta referencia',16,1)
 					END
 				END
 				ELSE
 				IF(@Tipo=3)
 				BEGIN
+					IF EXISTS(SELECT 1 FROM Activity.Actividad_Extra WHERE Id_Actividad_Extra = @Referencia)
 					BEGIN
-					IF EXISTS(SELECT 1 FROM Activity.Actividad WHERE Id_Actividad = @Referencia)
-					BEGIN
-						PRINT('Hay categorias vinculadas a esta referencia')
-						RAISERROR('Hay categorias vinculadas a esta referencia',16,1)
+						PRINT('Hay actividades vinculadas a esta referencia')
+						RAISERROR('Hay categorias actividades a esta referencia',16,1)
 					END
 				END
 				ELSE
@@ -960,6 +959,182 @@ BEGIN
 		IF ERROR_SEVERITY() > 10
 		BEGIN
 			RAISERROR('Ocurrio algo durante el borrado del detalle',16,1)
+			IF @@TRANCOUNT > 0
+			BEGIN
+				ROLLBACK TRANSACTION
+			END
+			RETURN;
+		END
+		IF ERROR_SEVERITY() = 10
+		BEGIN
+			COMMIT TRANSACTION
+			RETURN;
+		END
+	END CATCH
+	COMMIT TRANSACTION
+END
+GO
+
+CREATE OR ALTER PROCEDURE Activity.Borrar_Act_Extra
+	@Id_Actividad_Ext INTEGER
+AS
+BEGIN
+	SET NOCOUNT ON
+	BEGIN TRY
+		BEGIN TRANSACTION
+		DECLARE @Id_Persona INTEGER
+		DECLARE @Id_Detalle INTEGER
+		IF EXISTS(SELECT 1 FROM Activity.Actividad_Extra WHERE Id_Actividad_Extra = @Id_Actividad_Ext)
+		BEGIN
+			WHILE EXISTS(SELECT 1 FROM Activity.Inscripto_Act_Extra WHERE Id_Act_Extra = @Id_Actividad_Ext)
+			BEGIN
+				SELECT @Id_Persona = Id_Persona
+				FROM Activity.Inscripto_Act_Extra
+				WHERE Id_Act_Extra = @Id_Actividad_Ext
+				EXEC Activity.Borrar_Inscripto_Extr
+					@Id_Persona
+			END
+			DELETE 
+			FROM Activity.Actividad_Extra
+			WHERE Id_Actividad_Extra = @Id_Actividad_Ext
+
+			IF EXISTS(SELECT 1 FROM Payment.Referencia_Detalle WHERE Referencia = @Id_Actividad_Ext)
+			BEGIN
+				SELECT @Id_Detalle = Id_Detalle
+				FROM Payment.Referencia_Detalle
+				WHERE Referencia = @Id_Actividad_Ext AND Tipo_Referencia = 3
+
+				EXEC Payment.Borrar_Referencia_Detalle
+					@Id_detalle
+			END
+		END
+
+		ELSE
+
+		BEGIN
+			PRINT('No se encontro la actividad')
+			RAISERROR('No se encontro la actividad',16,1)
+		END
+
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo durante el borrado de actividad',16,1)
+			IF @@TRANCOUNT > 0
+			BEGIN
+				ROLLBACK TRANSACTION
+			END
+			RETURN;
+		END
+		IF ERROR_SEVERITY() = 10
+		BEGIN
+			COMMIT TRANSACTION
+			RETURN;
+		END
+	END CATCH
+	COMMIT TRANSACTION
+END
+GO
+
+CREATE OR ALTER PROCEDURE Activity.Borrar_Horario_Act
+	@Id_Horarios INTEGER
+AS
+BEGIN
+	SET NOCOUNT ON
+	BEGIN TRY
+		BEGIN TRANSACTION
+		DECLARE @Id_Socio INTEGER
+		DECLARE @Id_Detalle INTEGER
+		IF EXISTS(SELECT 1 FROM Activity.Horario_Actividad WHERE Id_Horario = @Id_Horarios)
+		BEGIN
+			WHILE EXISTS(SELECT 1 FROM Activity.Inscripto_Actividad WHERE Id_Horario = @Id_Horarios)
+			BEGIN
+				SELECT @Id_Socio = Id_Socio
+				FROM Activity.Inscripto_Actividad
+				WHERE Id_Horario = @Id_Horarios
+				EXEC Activity.Borrar_Inscripto
+					@Id_Socio
+			END
+			DELETE 
+			FROM Activity.Horario_Actividad
+			WHERE Id_Horario = @Id_Horarios
+		END
+
+		ELSE
+
+		BEGIN
+			PRINT('No se encontro el horario')
+			RAISERROR('No se encontro el horario',16,1)
+		END
+
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo durante el borrado de horarios',16,1)
+			IF @@TRANCOUNT > 0
+			BEGIN
+				ROLLBACK TRANSACTION
+			END
+			RETURN;
+		END
+		IF ERROR_SEVERITY() = 10
+		BEGIN
+			COMMIT TRANSACTION
+			RETURN;
+		END
+	END CATCH
+	COMMIT TRANSACTION
+END
+GO
+
+CREATE OR ALTER PROCEDURE Activity.Borrar_Act
+	@Id_Actividad INTEGER
+AS
+BEGIN
+	SET NOCOUNT ON
+	BEGIN TRY
+		BEGIN TRANSACTION
+		DECLARE @Id_Horario INTEGER
+		DECLARE @Id_Detalle INTEGER
+		IF EXISTS(SELECT 1 FROM Activity.Actividad WHERE Id_Actividad = @Id_Actividad)
+		BEGIN
+			WHILE EXISTS(SELECT 1 FROM Activity.Horario_Actividad WHERE Id_Actividad = @Id_Actividad)
+			BEGIN
+				SELECT @Id_Horario = @Id_Horario
+				FROM Activity.Horario_Actividad
+				WHERE Id_Actividad = @Id_Actividad
+				EXEC Activity.Borrar_Horario_Act
+					@Id_Horario
+			END
+			DELETE 
+			FROM Activity.Actividad
+			WHERE Id_Actividad = @Id_Actividad
+
+			IF EXISTS(SELECT 1 FROM Payment.Referencia_Detalle WHERE Referencia = @Id_Actividad)
+			BEGIN
+				SELECT @Id_Detalle = Id_Detalle
+				FROM Payment.Referencia_Detalle
+				WHERE Referencia = @Id_Actividad AND Tipo_Referencia = 2
+
+				EXEC Payment.Borrar_Referencia_Detalle
+					@Id_detalle
+			END
+		END
+
+		ELSE
+
+		BEGIN
+			PRINT('No se encontro la actividad')
+			RAISERROR('No se encontro la actividad',16,1)
+		END
+
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio algo durante el borrado de actividad',16,1)
 			IF @@TRANCOUNT > 0
 			BEGIN
 				ROLLBACK TRANSACTION
