@@ -2,8 +2,8 @@
 --MATERIA: BASES DE DATOS APLICADA
 --GRUPO: 12
 --Melissari, Pedro 46912033
---Del Valle, Federico
---Medina, Juan
+--Del Valle, Federico 43316258
+--Medina, Juan 46682620
 --Mennella, Elias Damian 46357008
 ----------------------------------------------------------------
 
