@@ -1,5 +1,9 @@
 # Trabajo Práctico - Bases de Datos Aplicadas
 
+## Link al repositorio
+
+https://github.com/EliasMenn/BBDDA_Grupo_12
+
 ## Descripción
 
 Este repositorio contiene el desarrollo del Trabajo Práctico de la materia Bases de Datos Aplicadas. El objetivo es modelar e implementar una base de datos para la institución Sol Norte, digitalizando los procesos de inscripción de socios, actividades deportivas, facturación, morosidad y pagos.
