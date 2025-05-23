@@ -123,9 +123,8 @@ IF OBJECT_ID('Person.Usuario', 'U') IS NULL
 BEGIN
 	CREATE TABLE Person.Usuario
 	(
-		Id_Usuario INT IDENTITY(1,1) PRIMARY KEY,
 		Id_Rol INT NOT NULL,
-		Id_Persona INT UNIQUE NOT NULL,
+		Id_Persona INT PRIMARY KEY,
 		Nombre_Usuario VARCHAR(30),
 		Contrasenia VARBINARY(32),
 		Vigencia_Contrasenia DATE,
@@ -337,7 +336,8 @@ BEGIN
 	CREATE TABLE Groups.Grupo_Familiar
 	(
 		Id_Grupo_Familiar INT IDENTITY(1,1) PRIMARY KEY,
-		Nombre_Familia VARCHAR(50)
+		Nombre_Familia VARCHAR(50),
+		Activo INT,
 	)
 END
 

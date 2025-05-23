@@ -786,7 +786,6 @@ AS
 BEGIN
 	BEGIN TRY
 		DECLARE @Id_Grupo INT
-
 		SET @Nombre_Familia = TRIM(@Nombre_Familia)	-- Validación nombre
 		IF @Nombre_Familia = '' OR LEN(@Nombre_Familia) > 50
 		BEGIN
@@ -808,10 +807,10 @@ BEGIN
 			PRINT('El socio ya pertenece a un grupo familiar')
 			RAISERROR('.', 16, 1)
 		END
-
-		INSERT INTO Groups.Grupo_Familiar (Nombre_Familia)-- Crear grupo
-		VALUES (@Nombre_Familia)
-
+		DECLARE @Activo INT = 0;
+		INSERT INTO Groups.Grupo_Familiar (Nombre_Familia, Activo)-- Crear grupo
+		VALUES (@Nombre_Familia, @Activo)
+		
 		SET @Id_Grupo = SCOPE_IDENTITY()
 
 		EXEC Groups.Agr_Miembro_Familia-- Asociar al socio al nuevo grupo

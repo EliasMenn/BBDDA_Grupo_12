@@ -14,12 +14,9 @@ USE master
 USE Com5600_G12
 GO
 
----------------------------------------------------------------------------------------------------
---------------------------------------- SPs AGREGACIÓN --------------------------------------------
-
-
 --Agregar Personas --
 --Caso Correcto -- 
+
 
 EXEC Person.Agr_Persona
 	@Nombre = 'Juan',
@@ -29,6 +26,8 @@ EXEC Person.Agr_Persona
     @Telefono_Contacto = '1122334455',
 	@DNI = '46682620'
 
+SELECT * 
+FROM Person.Persona
 
 --Casos Erroneos --
 
@@ -37,7 +36,7 @@ EXEC Person.Agr_Persona --DNI Duplicado
 	@Apellido = 'Medina',
     @Email = 'Medina@CABJ.com',
     @Fecha_Nacimiento = '2011-6-11',
-    @Telefono_Contacto = '2324',
+    @Telefono_Contacto = '1122334455',
     @DNI = '46682620'
 
 EXEC Person.Agr_Persona --Nombre con Numeros
@@ -182,7 +181,7 @@ EXEC Person.Agr_Socio
 
 -- CASO CORRECTO: mayor de edad sin tutor
 EXEC Person.Agr_Socio
-	@Nombre = 'Federico Matias',
+	@Nombre = 'Federico',
 	@Apellido = 'Del Valle',
 	@Email = 'fededelvalle@gmail.com',
 	@Fecha_Nacimiento = '2001-06-16',
@@ -217,7 +216,7 @@ EXEC Person.Agr_Socio
 	@Telefono_Contacto_Emg = '1177665544',
 	@Obra_Social = 'OSDE',
 	@Nro_Socio_Obra = '',
-	@Id_Tutor = '1'
+	@Id_Tutor = 1
 
 
 ----------------------------------------------------------------------------------------------------------
@@ -231,14 +230,6 @@ EXEC Payment.Agr_Factura
     @Fecha_Vencimiento = '2025-06-01',
     @Segundo_Vencimiento = '2025-06-15',
     @Total = 1500,
-    @Estado_Factura = 'Emitida';
-
--- CASO CORRECTO
-EXEC Payment.Agr_Factura
-    @Id_Persona = 1, -- debe existir en Person.Persona
-    @Fecha_Vencimiento = '2025-07-02',
-    @Segundo_Vencimiento = '2025-08-02',
-    @Total = 6000,
     @Estado_Factura = 'Emitida';
 
 -- CASO ERROR: Persona inexistente
@@ -257,28 +248,12 @@ EXEC Payment.Agr_Factura
     @Total = -50,
     @Estado_Factura = 'Emitida';
 
------------------------------------ Para Tabla Referencia_Detalle -------------------------------------
-
--- CASO CORRECTO
-EXEC Payment.Agr_Referencia_Detalle
-    @Referencia = 200,
-    @Descripcion = 'Fútbol infantil';
-
--- CASO ERROR: Descripción vacía
-EXEC Payment.Agr_Referencia_Detalle
-    @Referencia = 201,
-    @Descripcion = '';
-
--- CASO ERROR: Tipo inválido
-EXEC Payment.Agr_Referencia_Detalle
-    @Referencia = 502,
-    @Descripcion = 'Yoga adultos';
-
 ------------------------------------------- Para Tabla Detalle Factura -------------------------------------------
 
 -- Carga de una familia ficticia
-INSERT INTO Groups.Grupo_Familiar (Nombre_Familia)
-VALUES ('Familia López');
+EXEC Groups.Agr_Grupo_Familiar
+	@Nombre_Familia = 'Familia Lopéz',
+	@Id_Socio = '1'
 
 -- Otra familia opcional
 INSERT INTO Groups.Grupo_Familiar (Nombre_Familia)
@@ -308,7 +283,7 @@ EXEC Payment.Agr_Detalle_Factura
 
 -- CASO ERROR: Monto negativo
 EXEC Payment.Agr_Detalle_Factura
-    @Id_Factura = 2,
+    @Id_Factura = 1,
 	@Id_Detalle = 1, 
     @Concepto = 'Cuota abril',
     @Monto = -500,
@@ -316,6 +291,23 @@ EXEC Payment.Agr_Detalle_Factura
     @Id_Familia = 1,
     @Descuento_Act = 5,
     @Descuento_Lluvia = 0;
+
+----------------------------------- Para Tabla Referencia_Detalle -------------------------------------
+
+-- CASO CORRECTO
+EXEC Payment.Agr_Referencia_Detalle
+    @Referencia = 200,
+    @Descripcion = 'Fútbol infantil';
+
+-- CASO ERROR: Descripción vacía
+EXEC Payment.Agr_Referencia_Detalle
+    @Referencia = 201,
+    @Descripcion = '';
+
+-- CASO ERROR: Tipo inválido
+EXEC Payment.Agr_Referencia_Detalle
+    @Referencia = 502,
+    @Descripcion = 'Yoga adultos';
 
 ------------------------------------------- Para Tabla Pago -------------------------------------------
 
@@ -395,7 +387,7 @@ EXEC Payment.Agr_TipoMedio
     @Nombre_Medio = 'Débito automático',
     @Datos_Necesarios = 'CBU, Banco, Titular';
 
--- CASO "ERROR": Nombre muy largo -- Se corta el nombre
+-- CASO ERROR: Nombre muy largo
 EXEC Payment.Agr_TipoMedio
     @Nombre_Medio = 'EsteNombreEsMuyLargoParaElCampo',
     @Datos_Necesarios = 'Tarjeta, Vto, CVV';
@@ -407,7 +399,7 @@ EXEC Payment.Agr_Medio_Pago
     @Id_TipoMedio = 1,
     @Datos_Medio = 'CBU:12345678';
 
--- CASO ERROR: Persona inexistente
+-- CASO ERROR: Socio inexistente
 EXEC Payment.Agr_Medio_Pago
     @Id_Persona = 999,
     @Id_TipoMedio = 1,
@@ -419,36 +411,7 @@ EXEC Payment.Agr_Medio_Pago
     @Id_TipoMedio = 999,
     @Datos_Medio = 'CBU:12345678';
 
-------------------------------------------- Para Tabla Jornada -------------------------------------------
-
--- Correcto
-EXEC Jornada.Agr_Jornada
-    @Fecha = '2025-05-22',
-    @Lluvia = 1,
-    @MM = 23.5;
-
-
--- ERROR Fecha duplicada
--- Primer insert correcto
-EXEC Jornada.Agr_Jornada
-    @Fecha = '2025-05-23',
-    @Lluvia = 1,
-    @MM = 12.3;
-
--- Segundo insert con la misma fecha (error esperado)
-EXEC Jornada.Agr_Jornada
-    @Fecha = '2025-05-23',
-    @Lluvia = 1,
-    @MM = 8.0;
-
--- ERROR en el valor de lluvia
-EXEC Jornada.Agr_Jornada
-    @Fecha = '2025-05-24',
-    @Lluvia = 3,   -- sólo se permite 0 o 1
-    @MM = 5.5;
-
-
----------------------- CONTENIDOS TABLAS PAYMENT ----------------------
+-- CONTENIDOS TABLAS PAYMENT
 
 -- FACTURAS
 SELECT * FROM Payment.Factura;
@@ -473,71 +436,5 @@ SELECT * FROM Payment.Medio_Pago;
 
 -- CUENTAS
 SELECT * FROM Payment.Cuenta;
-
----------------------------------------------------------------------------------------------------
---------------------------------------- SPs BORRADO -----------------------------------------------
-
-------- TABLA GRUPO FAMILIAR -------
-
--- Obtener 3 socios
-DECLARE @Id_Socio1 INT, @Id_Socio2 INT, @Id_Socio3 INT;
-
-SELECT TOP 3 Id_Socio
-INTO #SociosTemp
-FROM Person.Socio
-WHERE Id_Socio NOT IN (SELECT Id_Socio FROM Groups.Miembro_Familia)
-ORDER BY Id_Socio;
-
--- Verificar que haya al menos 3 socios libres
-IF (SELECT COUNT(*) FROM #SociosTemp) < 3
-BEGIN
-    PRINT ' No hay al menos 3 socios sin grupo familiar. No se puede continuar.';
-    DROP TABLE #SociosTemp;
-END
-ELSE
-BEGIN
-    -- Asignar variables
-    SELECT @Id_Socio1 = (SELECT Id_Socio FROM #SociosTemp ORDER BY Id_Socio OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY),
-           @Id_Socio2 = (SELECT Id_Socio FROM #SociosTemp ORDER BY Id_Socio OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY),
-           @Id_Socio3 = (SELECT Id_Socio FROM #SociosTemp ORDER BY Id_Socio OFFSET 2 ROWS FETCH NEXT 1 ROWS ONLY);
-
-    -- Crear familia con el primer socio
-    DECLARE @Id_Familia INT;
-    EXEC @Id_Familia = Groups.Agr_Grupo_Familiar
-        @Nombre_Familia = 'Familia Temporal',
-        @Id_Socio = @Id_Socio1;
-
-    -- Agregar los otros dos socios
-    EXEC Groups.Agr_Miembro_Familia @Id_Socio = @Id_Socio2, @Id_Grupo = @Id_Familia;
-    EXEC Groups.Agr_Miembro_Familia @Id_Socio = @Id_Socio3, @Id_Grupo = @Id_Familia;
-
-    PRINT ' MIEMBROS ANTES DE BORRAR:';
-    SELECT 
-        mf.Id_Familia,
-        gf.Nombre_Familia,
-        s.Id_Socio,
-        p.Nombre,
-        p.Apellido,
-        p.DNI
-    FROM Groups.Miembro_Familia mf
-    JOIN Groups.Grupo_Familiar gf ON mf.Id_Familia = gf.Id_Grupo_Familiar
-    JOIN Person.Socio s ON mf.Id_Socio = s.Id_Socio
-    JOIN Person.Persona p ON s.Id_Persona = p.Id_Persona
-    WHERE mf.Id_Familia = @Id_Familia;
-
-    -- Borrar la familia
-    EXEC Groups.Borrar_Familia @Id_Familia = @Id_Familia;
-
-    PRINT ' VERIFICACIÓN DESPUÉS DEL BORRADO:';
-
-    -- Verificar que no exista la familia
-    SELECT * FROM Groups.Grupo_Familiar WHERE Id_Grupo_Familiar = @Id_Familia;
-
-    -- Verificar que no haya miembros asociados
-    SELECT * FROM Groups.Miembro_Familia WHERE Id_Familia = @Id_Familia;
-END
-
--- Limpiar tabla temporal
-DROP TABLE IF EXISTS #SociosTemp;
 
 
