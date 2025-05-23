@@ -251,8 +251,9 @@ EXEC Payment.Agr_Factura
 ------------------------------------------- Para Tabla Detalle Factura -------------------------------------------
 
 -- Carga de una familia ficticia
-INSERT INTO Groups.Grupo_Familiar (Nombre_Familia)
-VALUES ('Familia López');
+EXEC Groups.Agr_Grupo_Familiar
+	@Nombre_Familia = 'Familia Lopéz',
+	@Id_Socio = '1'
 
 -- Otra familia opcional
 INSERT INTO Groups.Grupo_Familiar (Nombre_Familia)
@@ -394,19 +395,19 @@ EXEC Payment.Agr_TipoMedio
 ------------------------------------------- Para Tabla Medio Pago -------------------------------------------
 -- CASO CORRECTO
 EXEC Payment.Agr_Medio_Pago
-    @Id_Socio = 1,
+    @Id_Persona = 1,
     @Id_TipoMedio = 1,
     @Datos_Medio = 'CBU:12345678';
 
 -- CASO ERROR: Socio inexistente
 EXEC Payment.Agr_Medio_Pago
-    @Id_Socio = 999,
+    @Id_Persona = 999,
     @Id_TipoMedio = 1,
     @Datos_Medio = 'CBU:12345678';
 
 -- CASO ERROR: TipoMedio inexistente
 EXEC Payment.Agr_Medio_Pago
-    @Id_Socio = 1,
+    @Id_Persona = 1,
     @Id_TipoMedio = 999,
     @Datos_Medio = 'CBU:12345678';
 
@@ -435,4 +436,5 @@ SELECT * FROM Payment.Medio_Pago;
 
 -- CUENTAS
 SELECT * FROM Payment.Cuenta;
+
 
