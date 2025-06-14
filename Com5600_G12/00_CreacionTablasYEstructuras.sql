@@ -94,7 +94,7 @@ IF OBJECT_ID('Person.Socio', 'U') IS NULL
 BEGIN
 	CREATE TABLE Person.Socio
 	(
-		Id_Socio INT IDENTITY(1,1) PRIMARY KEY,
+		Id_Socio INT PRIMARY KEY,
 		Id_Persona INT UNIQUE NOT NULL,
 		Id_Categoria INT NOT NULL,
 		Id_Tutor INT,

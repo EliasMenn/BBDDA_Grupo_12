@@ -105,6 +105,7 @@ GO
 -- Para Tabla Socio --
 
 CREATE OR ALTER PROCEDURE Person.Agr_Socio
+	@NroSocio INT,
 	@Nombre VARCHAR(25),
 	@Apellido VARCHAR(25),
 	@DNI VARCHAR(10),
@@ -122,7 +123,6 @@ BEGIN
 		DECLARE @Id_Categoria INT
 		DECLARE @Edad INT
 		DECLARE @Id INT
-
 
 	--Verificamos todos sus demas datos--
 		IF @Telefono_Contacto_Emg ='' OR @Telefono_Contacto_Emg LIKE '%[^0-9]%' OR LEN(@Telefono_Contacto_Emg) > 50
@@ -201,7 +201,7 @@ BEGIN
 	
 	--Verificamos que la persona no sea socio--
 
-		SELECT @Id = Id_Socio
+		SELECT @Id = @NroSocio
 		FROM Person.Socio 
 		WHERE Id_Persona = @Id_Persona
 
@@ -219,8 +219,8 @@ BEGIN
 			RETURN;
 		END
 	END CATCH
-	INSERT INTO Person.Socio (Id_Persona,Id_Categoria,Telefono_Emergencia,Obra_Social,Nro_Obra_Social,Id_Tutor)
-	VALUES (@Id_Persona, @Id_Categoria, @Telefono_Contacto_Emg, @Obra_Social, @Nro_Socio_Obra, @Id_Tutor)
+	INSERT INTO Person.Socio (Id_Socio, Id_Persona,Id_Categoria,Telefono_Emergencia,Obra_Social,Nro_Obra_Social,Id_Tutor)
+	VALUES (@NroSocio, @Id_Persona, @Id_Categoria, @Telefono_Contacto_Emg, @Obra_Social, @Nro_Socio_Obra, @Id_Tutor)
 	SET @Id = SCOPE_IDENTITY();
 	RETURN @Id
 END
