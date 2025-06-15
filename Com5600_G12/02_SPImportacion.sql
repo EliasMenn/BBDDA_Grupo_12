@@ -129,7 +129,7 @@ EXEC Person.Importar_Responsables_Pago
 SELECT * FROM Person.Persona
 SELECT * FROM Person.Socio
 
-
+GO
 
 
 
