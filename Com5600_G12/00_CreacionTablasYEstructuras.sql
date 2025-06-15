@@ -99,7 +99,7 @@ BEGIN
 		Id_Categoria INT NOT NULL,
 		Id_Tutor INT,
 		Telefono_Emergencia VARCHAR(15),
-		Obra_Social VARCHAR(30),
+		Obra_Social VARCHAR(100),
 		Nro_Obra_Social VARCHAR(20),
 		CONSTRAINT FK_Socio_Persona
 		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona),
