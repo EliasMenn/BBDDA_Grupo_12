@@ -41,7 +41,7 @@ BEGIN
     BEGIN TRY
         SET NOCOUNT ON;
 
-        -- Crear tabla temporal con columnas exactas del Excel
+        -- Tabla temporal para bajar los datos del archivo
         CREATE TABLE #TempResponsables (
             [Nro de Socio] NVARCHAR(50),
             [Nombre] NVARCHAR(50),
@@ -56,7 +56,7 @@ BEGIN
             [teléfono de contacto de emergencia ] NVARCHAR(50)
         );
 
-        -- SQL dinámico para importar datos desde Excel
+        -- SQL dinámico para trabajar con ruta como parámetro
         DECLARE @sql NVARCHAR(MAX);
         SET @sql = '
             INSERT INTO #TempResponsables
@@ -85,30 +85,30 @@ BEGIN
         );
 
         -- Insertar en Socio si no existe el Id_Persona ni el Id_Socio
-		INSERT INTO Person.Socio (
-			Id_Socio, Id_Persona, Id_Categoria, Id_Tutor, 
-			Telefono_Emergencia, Obra_Social, Nro_Obra_Social
-		)
-		SELECT
-			CAST(SUBSTRING(TRIM([Nro de Socio]), 4, LEN(TRIM([Nro de Socio]))) AS INT) AS Id_Socio,
-			P.Id_Persona,
-			100, -- Ajustá según tus categorías existentes
-			NULL,
-			TRIM(CONVERT(NVARCHAR(25), [ teléfono de contacto emergencia])),
-			TRIM(CONVERT(NVARCHAR(100), [Nombre de la obra social o prepaga])),
-			TRIM(CONVERT(NVARCHAR(50), [nro. de socio obra social/prepaga ]))
-		FROM #TempResponsables T
-		JOIN Person.Persona P
-			ON P.DNI COLLATE Latin1_General_CI_AS = TRIM(CONVERT(NVARCHAR(15), T.[ DNI])) COLLATE Latin1_General_CI_AS
-		WHERE NOT EXISTS (
-			SELECT 1
-			FROM Person.Socio S
-			WHERE 
-				S.Id_Persona = P.Id_Persona
-				OR S.Id_Socio = CAST(SUBSTRING(TRIM(T.[Nro de Socio]), 4, LEN(TRIM(T.[Nro de Socio]))) AS INT)
-		);
+	INSERT INTO Person.Socio (
+		Id_Socio, Id_Persona, Id_Categoria, Id_Tutor, 
+		Telefono_Emergencia, Obra_Social, Nro_Obra_Social
+	)
+	SELECT
+		CAST(SUBSTRING(TRIM([Nro de Socio]), 4, LEN(TRIM([Nro de Socio]))) AS INT) AS Id_Socio,
+		P.Id_Persona,
+		100, -- Categorías
+		NULL,
+		TRIM(CONVERT(NVARCHAR(25), [ teléfono de contacto emergencia])),
+		TRIM(CONVERT(NVARCHAR(100), [Nombre de la obra social o prepaga])),
+		TRIM(CONVERT(NVARCHAR(50), [nro. de socio obra social/prepaga ]))
+	FROM #TempResponsables T
+	JOIN Person.Persona P
+		ON P.DNI COLLATE Latin1_General_CI_AS = TRIM(CONVERT(NVARCHAR(15), T.[ DNI])) COLLATE Latin1_General_CI_AS
+	WHERE NOT EXISTS (
+		SELECT 1
+		FROM Person.Socio S
+		WHERE 
+			S.Id_Persona = P.Id_Persona
+			OR S.Id_Socio = CAST(SUBSTRING(TRIM(T.[Nro de Socio]), 4, LEN(TRIM(T.[Nro de Socio]))) AS INT)
+	);
 
-        PRINT 'Importación exitosa usando nombres de columnas exactos.';
+        PRINT 'Importación exitosa.';
     END TRY
     BEGIN CATCH
         PRINT 'Error durante la importación: ' + ERROR_MESSAGE();
@@ -123,7 +123,7 @@ VALUES
     ('Adulto', 18, 64, 'Mayores de edad hasta 64', 1000.00);
 
 EXEC Person.Importar_Responsables_Pago
-    @NomArch = N'C:\Users\Pedro Melissari\Desktop\Archivos BDD\Datos socios.xlsx';
+    @NomArch = N'C:\Users\Pedro Melissari\Desktop\Archivos BDD\Datos socios.xlsx'; -- Acá va la ruta
 
 SELECT * FROM Person.Persona
 SELECT * FROM Person.Socio
