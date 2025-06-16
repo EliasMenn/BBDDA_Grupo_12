@@ -87,3 +87,34 @@ AS
 		) AS TablaPivot
 
 	END
+GO
+
+CREATE OR ALTER PROCEDURE Reporte.InasistenciasAct
+AS
+	BEGIN
+		SELECT c.Nombre_Cat, a.Nombre_Act, COUNT(*) AS Ausentes_Categoria, SUM(COUNT(*)) OVER 
+		(PARTITION BY a.Nombre_Act) AS Total_Ausencias_Actividad
+		FROM Activity.Asistencia a
+		JOIN Person.Socio s ON s.Id_Socio = a.Id_Socio
+		JOIN Groups.Categoria c ON c.Id_Categoria = s.Id_Categoria 
+		WHERE a.Asistencia IN ('A','J')
+		GROUP BY c.Nombre_Cat, a.Nombre_Act
+		ORDER BY 
+			SUM(COUNT(*)) OVER (PARTITION BY a.Nombre_Act) DESC,
+			COUNT(*) DESC
+	END
+GO
+
+CREATE OR ALTER PROCEDURE Reporte.Inasistencias
+AS
+	BEGIN
+		SELECT DISTINCT 
+		p.Nombre, p.Apellido, 
+		DATEDIFF(YEAR, p.Fecha_Nacimiento, GETDATE()) AS Edad,
+		s.Id_Categoria, a.Nombre_Act
+		FROM Activity.Asistencia a
+		JOIN Person.Socio s ON s.Id_Socio = a.Id_Socio
+		JOIN Person.Persona p ON p.Id_Persona = s.Id_Persona
+
+	END
+GO

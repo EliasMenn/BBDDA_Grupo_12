@@ -316,6 +316,20 @@ BEGIN
 	)
 END
 
+IF OBJECT_ID('Activity.Asistencia') IS NULL
+BEGIN 
+	CREATE TABLE Activity.Asistencia
+	(
+		Id_Socio INT,
+		Nombre_Act NVARCHAR(30),
+		Fecha DATE,
+		Asistencia CHAR(1),
+		Profesor NVARCHAR(50)
+		CONSTRAINT FK_Asistencia_Socio
+		FOREIGN KEY (Id_Socio) REFERENCES Person.Socio
+	)
+END 
+
 -- Tablas Pertenecientes al Schema Groups --
 
 IF OBJECT_ID('Groups.Categoria') IS NULL
