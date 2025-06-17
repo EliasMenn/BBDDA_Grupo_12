@@ -1237,6 +1237,58 @@ BEGIN
 END
 GO
 
+CREATE OR ALTER PROCEDURE Activity.Agr_Asistencia
+	@Id_Socio INT,
+	@Actividad VARCHAR(30),
+	@Fecha DATE,
+	@Asistencia CHAR(1),
+	@Profesor VARCHAR(50)
+AS
+BEGIN
+	BEGIN TRY
+
+		IF NOT EXISTS (SELECT 1 FROM Person.Socio WHERE Id_Socio = Id_Socio)
+		BEGIN
+			PRINT('La persona que asistio no es socio')
+			RAISERROR('La persona que asistio no es socio',16,1)
+		END
+
+		IF @Actividad LIKE '%[^a-zA-Z]%'
+		BEGIN
+			PRINT('El nombre de actividad no es valido')
+			RAISERROR('El nombre de actividad no es valido',16,1)
+		END
+
+		IF @Fecha > CAST(GETDATE() AS DATE)
+		BEGIN
+			PRINT('La fecha de asistencia es en el futuro')
+			RAISERROR('La fecha de asistencia es en el futuro',16,1)
+		END
+
+		IF UPPER(@Asistencia) NOT IN ('A','P','J')
+		BEGIN
+			PRINT('La asistencia no es valida')
+			RAISERROR('La asistencia no es valida',16,1)
+		END
+
+		IF @Profesor LIKE '%[^a-zA-Z ]%'
+		BEGIN
+			PRINT('El nombre del profesor no es valido')
+			RAISERROR('El nombre del profesor no es valido',16,1)
+		END
+		
+		INSERT INTO Activity.Asistencia(Id_Socio, Nombre_Act, Fecha, Asistencia, Profesor)
+		VALUES (@Id_Socio, @Actividad, @Fecha, @Asistencia, @Profesor)
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrio Algo en el agregado de la asistencia',16,1)
+			RETURN;
+		END
+	END CATCH
+END
+GO
 CREATE OR ALTER PROCEDURE Payment.Agr_Referencia_Detalle
     @Referencia INT,
     @Descripcion VARCHAR(50)
