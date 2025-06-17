@@ -439,10 +439,11 @@ EXEC Payment.Agr_Factura @Id_Persona = 1, @Fecha_Vencimiento = '2025-07-01', @Se
 SET @FacturaDF = SCOPE_IDENTITY();
 EXEC Payment.Agr_Referencia_Detalle @Referencia = 301, @Descripcion = 'Gimnasia rítmica';
 
+
 -- Agregar detalle
 EXEC Payment.Agr_Detalle_Factura
     @Id_Factura = @FacturaDF,
-    @Id_Detalle = 301,
+    @Id_Detalle = 1,
     @Concepto = 'Cuota Julio',
     @Monto = 1000,
     @Descuento_Familiar = 0,

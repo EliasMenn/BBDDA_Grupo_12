@@ -177,7 +177,7 @@ BEGIN
 		Id_Familia INT,
 		Descuento_Act INT,
 		Descuento_Lluvia INT,
-		CONSTRAINT PK_Detalle_Factura PRIMARY KEY (Id_Factura, Id_Detalle),
+		CONSTRAINT PK_Detalle_Factura PRIMARY KEY (Id_Factura),
 		CONSTRAINT FK_Detalle_Factura FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura),
 		CONSTRAINT FK_Detalle_Referencia FOREIGN KEY (Id_Detalle) REFERENCES Payment.Referencia_Detalle(Id_Detalle)
 	)
@@ -320,7 +320,7 @@ IF OBJECT_ID('Activity.Asistencia') IS NULL
 BEGIN 
 	CREATE TABLE Activity.Asistencia
 	(
-		Id_Socio INT,
+		Id_Socio VARCHAR(20),
 		Nombre_Act NVARCHAR(30),
 		Fecha DATE,
 		Asistencia CHAR(1),

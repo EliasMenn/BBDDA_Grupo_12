@@ -72,7 +72,7 @@ BEGIN
 		END
 		SET @Email = TRIM(@Email);
 
-		IF @Fecha_Nacimiento IS NULL OR (@Fecha_Nacimiento NOT BETWEEN '1930-01-01' AND GETDATE())
+		IF @Fecha_Nacimiento IS NULL OR (@Fecha_Nacimiento NOT BETWEEN '1900-01-01' AND GETDATE())
 		BEGIN
 			PRINT('La fecha de nacimiento no es valida.')
 			RAISERROR('.', 16,1)
@@ -105,7 +105,7 @@ GO
 -- Para Tabla Socio --
 
 CREATE OR ALTER PROCEDURE Person.Agr_Socio
-	@NroSocio INT,
+	@NroSocio VARCHAR(20),
 	@Nombre VARCHAR(25),
 	@Apellido VARCHAR(25),
 	@DNI VARCHAR(10),
@@ -200,15 +200,24 @@ BEGIN
 		@DNI = @DNI
 	
 	--Verificamos que la persona no sea socio--
+		IF(@NroSocio LIKE '[A-Z][A-Z]-[0-9][0-9][0-9][0-9]')
+		BEGIN
+			SELECT @Id = @NroSocio
+			FROM Person.Socio 
+			WHERE Id_Persona = @Id_Persona
 
-		SELECT @Id = @NroSocio
-		FROM Person.Socio 
-		WHERE Id_Persona = @Id_Persona
+			IF @Id IS NOT NULL
+			BEGIN 
+				PRINT('Esta persona ya es socio');
+				RETURN @Id
+			END
+		END
 
-		IF @Id IS NOT NULL
-		BEGIN 
-			PRINT('Esta persona ya es socio');
-			RETURN @Id
+		ELSE
+
+		BEGIN
+			PRINT('El Id de socio ingresado no es valido')
+			RAISERROR('El Id de socio ingresado no es valido',16,1)
 		END
 
 	END TRY
@@ -740,7 +749,7 @@ GO
 
 ---- Para Tabla Miembro Familia ----
 CREATE OR ALTER PROCEDURE Groups.Agr_Miembro_Familia
-	@Id_Socio INT,
+	@Id_Socio VARCHAR(20),
 	@Id_Grupo INT
 AS
 BEGIN
@@ -842,7 +851,7 @@ BEGIN
 		DECLARE @Id INTEGER
 		SET @Nombre_Cat = TRIM(@Nombre_Cat)
 
-		IF EXISTS (SELECT 1 FROM Groups.Categoria WHERE @Nombre_Cat = @Nombre_Cat)
+		IF EXISTS (SELECT 1 FROM Groups.Categoria WHERE Nombre_Cat = @Nombre_Cat)
 		BEGIN
 			PRINT('Ya existe una categoria con ese nombre')
 			RAISERROR('.',16,1)
@@ -1121,7 +1130,7 @@ GO
 
 CREATE OR ALTER PROCEDURE Activity.Agr_Inscripto_Actividad
 	@Id_Horario INTEGER,
-	@Id_Socio INTEGER
+	@Id_Socio VARCHAR(20)
 
 AS
 BEGIN
@@ -1238,7 +1247,7 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE Activity.Agr_Asistencia
-	@Id_Socio INT,
+	@Id_Socio VARCHAR(20),
 	@Actividad VARCHAR(30),
 	@Fecha DATE,
 	@Asistencia CHAR(1),
