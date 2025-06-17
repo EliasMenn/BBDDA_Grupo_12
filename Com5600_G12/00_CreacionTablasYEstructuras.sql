@@ -71,7 +71,7 @@ BEGIN
 		Id_Persona INT IDENTITY(1,1) PRIMARY KEY,
 		Nombre VARCHAR(25),
 		Apellido VARCHAR(25),
-		DNI VARCHAR(10),
+		DNI VARCHAR(15),
 		Email VARCHAR(50),
 		Fecha_Nacimiento DATE,
 		Telefono_Contacto VARCHAR(15)
@@ -94,7 +94,7 @@ IF OBJECT_ID('Person.Socio', 'U') IS NULL
 BEGIN
 	CREATE TABLE Person.Socio
 	(
-		Id_Socio INT PRIMARY KEY,
+		Id_Socio VARCHAR(20) PRIMARY KEY,
 		Id_Persona INT UNIQUE NOT NULL,
 		Id_Categoria INT NOT NULL,
 		Id_Tutor INT,
@@ -292,7 +292,7 @@ BEGIN
 	CREATE TABLE Activity.Inscripto_Actividad
 	(
 		Id_Horario INT,
-		Id_Socio INT,
+		Id_Socio VARCHAR(20),
 		Fecha_Inscripcion DATE,
 		CONSTRAINT FK_Inscripto_Horario
 		FOREIGN KEY (Id_Horario) REFERENCES Activity.Horario_Actividad(Id_Horario),
@@ -330,6 +330,19 @@ BEGIN
 		Costo DECIMAL,
 	)
 END
+IF NOT EXISTS (SELECT 1 FROM Groups.Categoria WHERE Id_Categoria = 100)
+BEGIN
+    SET IDENTITY_INSERT Groups.Categoria ON;
+    
+    INSERT INTO Groups.Categoria (Id_Categoria, Nombre_Cat, EdadMin, EdadMax, Descr, Costo)
+    VALUES (100, 'GENÉRICA', 0, 99, 'Categoría por defecto', 0);
+
+    SET IDENTITY_INSERT Groups.Categoria OFF;
+END
+
+
+
+
 
 IF OBJECT_ID('Groups.Grupo_Familiar') IS NULL
 BEGIN 
@@ -345,7 +358,7 @@ IF OBJECT_ID('Groups.Miembro_Familia') IS NULL
 BEGIN 
 	CREATE TABLE Groups.Miembro_Familia
 	(
-		Id_Socio INT, 
+		Id_Socio VARCHAR(20), 
 		Id_Familia INT
 		CONSTRAINT FK_Familia_Socio
 		FOREIGN KEY (Id_Socio) REFERENCES Person.Socio(Id_Socio),

@@ -143,7 +143,7 @@ BEGIN
     SET NOCOUNT ON;
 
     CREATE TABLE #TempGrupoFamiliar (
-        NroSocio VARCHAR(20),
+        Id_Socio VARCHAR(20),
         NroSocioRP VARCHAR(20),
         Nombre VARCHAR(50),
         Apellido VARCHAR(50),
@@ -163,7 +163,7 @@ BEGIN
             [Nro de socio RP],
             [Nombre],
             [ apellido],
-            [ DNI],
+            RIGHT(''0000000000'' + CAST(CAST([ DNI] AS BIGINT) AS VARCHAR(20)), 8),
             [ email personal],
             [ fecha de nacimiento],
             [ teléfono de contacto],
@@ -183,22 +183,38 @@ BEGIN
     FROM #TempGrupoFamiliar t
     WHERE NOT EXISTS (
         SELECT 1 FROM Person.Persona p 
-        WHERE p.DNI COLLATE Latin1_General_CI_AS = t.DNI
+        WHERE p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
     );
 
-    INSERT INTO Person.Socio (Id_Socio, Id_Persona, Id_Categoria, Telefono_Emergencia, Obra_Social, Nro_Obra_Social)
-    SELECT
-        ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) + ISNULL((SELECT MAX(Id_Socio) FROM Person.Socio), 0),
+	INSERT INTO Person.Tutor (Id_Persona, Parentesco)
+    SELECT DISTINCT
         p.Id_Persona,
-        100,
-        NULL,
-        t.ObraSocial,
-        t.NroObraSocial
+        'Padre'  -- reemplazable con campo futuro
     FROM #TempGrupoFamiliar t
-    JOIN Person.Persona p ON p.DNI COLLATE Latin1_General_CI_AS = t.[DNI]
+    JOIN #TempGrupoFamiliar tTutor 
+        ON t.NroSocioRP COLLATE Latin1_General_CI_AS = tTutor.Id_Socio COLLATE Latin1_General_CI_AS
+    JOIN Person.Persona p 
+        ON p.DNI COLLATE Latin1_General_CI_AS = tTutor.DNI COLLATE Latin1_General_CI_AS
     WHERE NOT EXISTS (
-        SELECT 1 FROM Person.Socio s WHERE s.Id_Persona = p.Id_Persona
+        SELECT 1 FROM Person.Tutor tut WHERE tut.Id_Persona = p.Id_Persona
     );
+
+
+	INSERT INTO Person.Socio (Id_Socio, Id_Persona, Id_Categoria, Telefono_Emergencia, Obra_Social, Nro_Obra_Social)
+	SELECT
+		t.Id_Socio,
+		p.Id_Persona,
+		100,
+		NULL,
+		t.ObraSocial,
+		t.NroObraSocial
+	FROM #TempGrupoFamiliar t
+	JOIN Person.Persona p ON p.DNI = t.DNI COLLATE Latin1_General_CI_AS
+	WHERE NOT EXISTS (
+		SELECT 1 FROM Person.Socio s WHERE s.Id_Socio COLLATE Latin1_General_CI_AS = t.Id_Socio COLLATE Latin1_General_CI_AS
+	);
+
+
 
     IF NOT EXISTS (SELECT 1 FROM Groups.Grupo_Familiar WHERE Nombre_Familia = 'FAMILIA GENÉRICA')
     BEGIN
@@ -211,22 +227,41 @@ BEGIN
         s.Id_Socio,
         f.Id_Grupo_Familiar
     FROM #TempGrupoFamiliar t
-    JOIN Person.Persona p ON p.DNI COLLATE Latin1_General_CI_AS = t.[DNI]
+    JOIN Person.Persona p ON p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
     JOIN Person.Socio s ON s.Id_Persona = p.Id_Persona
     JOIN Groups.Grupo_Familiar f ON f.Nombre_Familia = 'FAMILIA GENÉRICA'
     WHERE NOT EXISTS (
-        SELECT 1 FROM Groups.Miembro_Familia mf WHERE mf.Id_Socio = s.Id_Socio
-    );
+    SELECT 1 FROM Groups.Miembro_Familia WHERE Id_Socio COLLATE Latin1_General_CI_AS = s.Id_Socio COLLATE Latin1_General_CI_AS
+	);
 
     DROP TABLE #TempGrupoFamiliar;
 END;
+
+
+
+
+DELETE FROM Groups.Miembro_Familia WHERE Id_Socio = 'SN-4121';
+DELETE FROM Person.Socio WHERE Id_Socio = 'SN-4121';
+
+
+
+DELETE FROM Groups.Miembro_Familia;
+DELETE FROM Person.Socio;
+DELETE FROM Person.Persona;
+select * from Person.Persona
+select * from Person.Socio order by Person.Socio.Id_Persona
+select * from Person.Tutor
+select * from Groups.Miembro_Familia
+
+SELECT * FROM Person.Socio WHERE Id_Socio = 'SN-4121';
+
 
 
 EXEC ImportarGrupoFamiliar
     @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\TP_BDDA\BBDDA_Grupo_12\Datos socios.xlsx',
     @NombreHoja = 'Grupo Familiar$';
 
-
+	
 
 --Me permite ver los headers del excel
 	SELECT TOP 1 * 
@@ -240,6 +275,9 @@ FROM OPENROWSET(
 
 --Select para ver que me trae los datos
 SELECT 
+	[Nro de Socio],
+	[Nombre],
+	[ DNI],
     [ email personal],
     [ fecha de nacimiento],
     [ teléfono de contacto],
