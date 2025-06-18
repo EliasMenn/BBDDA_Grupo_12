@@ -239,8 +239,9 @@ VALUES ('Adultos', 18, 99, 'Mayores de edad', 1500);
 -- Alta de socio mayor
 DECLARE @IdPersona_Socio INT;
 
-EXEC @IdSocio = Person.Agr_Socio
-    @Nombre = 'Federico',
+EXEC Person.Agr_Socio
+    @IdSocio = 'SN-1234'
+	@Nombre = 'Federico',
     @Apellido = 'Del Valle',
     @DNI = '77777777',
     @Email = 'federico.dv@mail.com',

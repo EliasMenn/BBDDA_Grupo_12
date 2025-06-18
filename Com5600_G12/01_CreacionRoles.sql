@@ -6,7 +6,7 @@
 --Medina, Juan 46682620
 --Mennella, Elias Damian 46357008
 ----------------------------------------------------------------
-USE [COM5600_G12];  -- Cambia al contexto de tu base de datos
+USE COM5600_G12;  -- Cambia al contexto de tu base de datos
 GO
 
 -- Creación de roles de base de datos
