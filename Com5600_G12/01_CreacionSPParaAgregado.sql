@@ -1262,6 +1262,12 @@ BEGIN
 			RAISERROR('La persona que asistio no es socio',16,1)
 		END
 
+		IF NOT EXISTS (SELECT 1 FROM Activity.Actividad WHERE Nombre = @Actividad)
+		BEGIN
+			PRINT('No existe esa actividad')
+			RAISERROR('No existe esa actividad',16,1)
+		END
+
 		IF @Actividad LIKE '%[^a-zA-Z]%'
 		BEGIN
 			PRINT('El nombre de actividad no es valido')
@@ -1286,6 +1292,13 @@ BEGIN
 			RAISERROR('El nombre del profesor no es valido',16,1)
 		END
 		
+		IF 
+		EXISTS (SELECT 1 FROM Activity.Asistencia WHERE Id_Socio = @Id_Socio AND Nombre_Act = @Actividad AND Fecha = @Fecha AND Profesor = @Profesor)
+		BEGIN
+			PRINT('Esta inasistencia ya fue registrada')
+			RAISERROR('Esta asistencia ya fue registrada',16,1)
+		END
+ 
 		INSERT INTO Activity.Asistencia(Id_Socio, Nombre_Act, Fecha, Asistencia, Profesor)
 		VALUES (@Id_Socio, @Actividad, @Fecha, @Asistencia, @Profesor)
 	END TRY
