@@ -35,85 +35,103 @@ EXEC master.dbo.sp_MSset_oledb_prop
 GO
 
 CREATE OR ALTER PROCEDURE Person.Importar_Responsables_Pago
-    @NomArch NVARCHAR(255)
+    @RutaArchivo NVARCHAR(256),
+    @NombreHoja NVARCHAR(256)
 AS
 BEGIN
     BEGIN TRY
         SET NOCOUNT ON;
 
-        -- Tabla temporal para bajar los datos del archivo
+        -- Tabla temporal
         CREATE TABLE #TempResponsables (
-            [Nro de Socio] NVARCHAR(50),
-            [Nombre] NVARCHAR(50),
-            [ apellido] NVARCHAR(50),
-            [ DNI] NVARCHAR(15),
-            [ email personal] NVARCHAR(100),
-            [ fecha de nacimiento] NVARCHAR(50),
-            [ teléfono de contacto] NVARCHAR(25),
-            [ teléfono de contacto emergencia ] NVARCHAR(25),
-            [Nombre de la obra social o prepaga] NVARCHAR(150),
-            [nro. de socio obra social/prepaga ] NVARCHAR(50),
-            [teléfono de contacto de emergencia ] NVARCHAR(50)
+            NroSocioRP VARCHAR(20),
+            Nombre VARCHAR(50),
+            Apellido VARCHAR(50),
+            DNI VARCHAR(15),
+            Email VARCHAR(100),
+            FechaNacimiento DATE,
+            TelefonoContacto VARCHAR(20),
+            ObraSocial VARCHAR(100),
+            NroObraSocial VARCHAR(30)
         );
 
-        -- SQL dinámico para trabajar con ruta como parámetro
-        DECLARE @sql NVARCHAR(MAX);
-        SET @sql = '
+        -- Variable @SQL (solo una vez)
+        DECLARE @SQL NVARCHAR(MAX);
+        SET @SQL = '
             INSERT INTO #TempResponsables
-            SELECT * FROM OPENROWSET(
+            SELECT 
+                [Nro de Socio],
+                [Nombre],
+                [ apellido],
+                RIGHT(''0000000000'' + CAST(CAST([ DNI] AS BIGINT) AS VARCHAR(20)), 8),
+                [ email personal],
+                [ fecha de nacimiento],
+                [ teléfono de contacto],
+                [ Nombre de la obra social o prepaga],
+                [nro# de socio obra social/prepaga]
+            FROM OPENROWSET(
                 ''Microsoft.ACE.OLEDB.16.0'',
-                ''Excel 12.0;Database=' + @NomArch + ';HDR=YES;IMEX=1'',
-                ''SELECT * FROM [Responsables de Pago$]''
+                ''Excel 12.0;Database=' + @RutaArchivo + ';HDR=YES;IMEX=1'',
+                ''SELECT * FROM [' + @NombreHoja + ']''
             );
         ';
-        EXEC(@sql);
+        EXEC sp_executesql @SQL;
 
-        -- Insertar en Persona si no existe el DNI
+        -- Insertar en Persona
         INSERT INTO Person.Persona (Nombre, Apellido, DNI, Email, Fecha_Nacimiento, Telefono_Contacto)
         SELECT DISTINCT
-            TRIM(CONVERT(NVARCHAR(50), [Nombre])),
-            TRIM(CONVERT(NVARCHAR(50), [ apellido])),
-            TRIM(CONVERT(NVARCHAR(15), [ DNI])),
-            TRIM(CONVERT(NVARCHAR(100), [ email personal])),
-            TRY_CONVERT(DATE, [ fecha de nacimiento], 103),
-            TRIM(CONVERT(NVARCHAR(25), [ teléfono de contacto]))
-        FROM #TempResponsables
+            Nombre, Apellido, DNI, Email, FechaNacimiento, TelefonoContacto
+        FROM #TempResponsables t
         WHERE NOT EXISTS (
-            SELECT 1 
-            FROM Person.Persona P 
-            WHERE P.DNI COLLATE Latin1_General_CI_AS = TRIM(CONVERT(NVARCHAR(15), [ DNI])) COLLATE Latin1_General_CI_AS
+            SELECT 1 FROM Person.Persona p 
+            WHERE p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
         );
 
-        -- Insertar en Socio si no existe el Id_Persona ni el Id_Socio
-	INSERT INTO Person.Socio (
-		Id_Socio, Id_Persona, Id_Categoria, Id_Tutor, 
-		Telefono_Emergencia, Obra_Social, Nro_Obra_Social
-	)
-	SELECT
-		CAST(SUBSTRING(TRIM([Nro de Socio]), 4, LEN(TRIM([Nro de Socio]))) AS INT) AS Id_Socio,
-		P.Id_Persona,
-		100, -- Categorías
-		NULL,
-		TRIM(CONVERT(NVARCHAR(25), [ teléfono de contacto emergencia])),
-		TRIM(CONVERT(NVARCHAR(100), [Nombre de la obra social o prepaga])),
-		TRIM(CONVERT(NVARCHAR(50), [nro. de socio obra social/prepaga ]))
-	FROM #TempResponsables T
-	JOIN Person.Persona P
-		ON P.DNI COLLATE Latin1_General_CI_AS = TRIM(CONVERT(NVARCHAR(15), T.[ DNI])) COLLATE Latin1_General_CI_AS
-	WHERE NOT EXISTS (
-		SELECT 1
-		FROM Person.Socio S
-		WHERE 
-			S.Id_Persona = P.Id_Persona
-			OR S.Id_Socio = CAST(SUBSTRING(TRIM(T.[Nro de Socio]), 4, LEN(TRIM(T.[Nro de Socio]))) AS INT)
-	);
+        -- Insertar en Socio
+        INSERT INTO Person.Socio (
+    Id_Socio, Id_Persona, Id_Categoria, Id_Tutor, 
+    Telefono_Emergencia, Obra_Social, Nro_Obra_Social
+)
+SELECT
+    t.NroSocioRP,
+    p.Id_Persona,
+    100,
+    NULL,
+    NULL,
+    t.ObraSocial,
+    t.NroObraSocial
+FROM #TempResponsables t
+JOIN Person.Persona p 
+    ON p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM Person.Socio s
+    WHERE 
+        s.Id_Persona = p.Id_Persona
+        OR s.Id_Socio COLLATE Latin1_General_CI_AS = t.NroSocioRP COLLATE Latin1_General_CI_AS
+);
 
-        PRINT 'Importación exitosa.';
+        -- Insertar en Tutor
+        INSERT INTO Person.Tutor (Id_Persona, Parentesco)
+        SELECT DISTINCT
+            P.Id_Persona,
+            'Responsable'
+        FROM #TempResponsables T
+        JOIN Person.Persona P 
+            ON P.DNI COLLATE Latin1_General_CI_AS = T.DNI COLLATE Latin1_General_CI_AS
+        WHERE NOT EXISTS (
+            SELECT 1 FROM Person.Tutor TU WHERE TU.Id_Persona = P.Id_Persona
+        );
+
+        DROP TABLE #TempResponsables;
+        PRINT 'Importación de responsables exitosa.';
     END TRY
     BEGIN CATCH
         PRINT 'Error durante la importación: ' + ERROR_MESSAGE();
     END CATCH
 END;
+
+
 
 
 -- Categorias para probar
@@ -124,7 +142,8 @@ VALUES
     ('Adulto', 18, 64, 'Mayores de edad hasta 64', 1000.00);
 
 EXEC Person.Importar_Responsables_Pago
-    @NomArch = N'C:\Users\Pedro Melissari\Desktop\Archivos BDD\Datos socios.xlsx'; -- Acá va la ruta
+    @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\TP_BDDA\BBDDA_Grupo_12\Datos socios.xlsx',
+    @NombreHoja = 'Responsables de Pago$';
 
 SELECT * FROM Person.Persona
 SELECT * FROM Person.Socio
@@ -177,6 +196,7 @@ BEGIN
     ';
     EXEC sp_executesql @SQL;
 
+    -- Insertar en Persona
     INSERT INTO Person.Persona (Nombre, Apellido, DNI, Email, Fecha_Nacimiento, Telefono_Contacto)
     SELECT DISTINCT
         Nombre, Apellido, DNI, Email, FechaNacimiento, TelefonoContacto
@@ -186,36 +206,36 @@ BEGIN
         WHERE p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
     );
 
-	INSERT INTO Person.Tutor (Id_Persona, Parentesco)
-    SELECT DISTINCT
+    -- Insertar en Socio
+    INSERT INTO Person.Socio (Id_Socio, Id_Persona, Id_Categoria, Telefono_Emergencia, Obra_Social, Nro_Obra_Social)
+    SELECT
+        t.Id_Socio,
         p.Id_Persona,
-        'Padre'  -- reemplazable con campo futuro
+        100,
+        NULL,
+        t.ObraSocial,
+        t.NroObraSocial
     FROM #TempGrupoFamiliar t
-    JOIN #TempGrupoFamiliar tTutor 
-        ON t.NroSocioRP COLLATE Latin1_General_CI_AS = tTutor.Id_Socio COLLATE Latin1_General_CI_AS
-    JOIN Person.Persona p 
-        ON p.DNI COLLATE Latin1_General_CI_AS = tTutor.DNI COLLATE Latin1_General_CI_AS
+    JOIN Person.Persona p ON p.DNI = t.DNI COLLATE Latin1_General_CI_AS
     WHERE NOT EXISTS (
-        SELECT 1 FROM Person.Tutor tut WHERE tut.Id_Persona = p.Id_Persona
+        SELECT 1 FROM Person.Socio s 
+        WHERE s.Id_Socio COLLATE Latin1_General_CI_AS = t.Id_Socio COLLATE Latin1_General_CI_AS
     );
 
+    -- Asignar Id_Tutor a los socios del grupo familiar
+    UPDATE S
+    SET S.Id_Tutor = T.Id_Tutor
+    FROM Person.Socio S
+    JOIN #TempGrupoFamiliar TG
+        ON S.Id_Socio COLLATE Latin1_General_CI_AS = TG.Id_Socio COLLATE Latin1_General_CI_AS
+    JOIN Person.Socio STutor
+        ON STutor.Id_Socio COLLATE Latin1_General_CI_AS = TG.NroSocioRP COLLATE Latin1_General_CI_AS
+    JOIN Person.Tutor T
+        ON T.Id_Persona = STutor.Id_Persona
+    WHERE S.Id_Tutor IS NULL;
 
-	INSERT INTO Person.Socio (Id_Socio, Id_Persona, Id_Categoria, Telefono_Emergencia, Obra_Social, Nro_Obra_Social)
-	SELECT
-		t.Id_Socio,
-		p.Id_Persona,
-		100,
-		NULL,
-		t.ObraSocial,
-		t.NroObraSocial
-	FROM #TempGrupoFamiliar t
-	JOIN Person.Persona p ON p.DNI = t.DNI COLLATE Latin1_General_CI_AS
-	WHERE NOT EXISTS (
-		SELECT 1 FROM Person.Socio s WHERE s.Id_Socio COLLATE Latin1_General_CI_AS = t.Id_Socio COLLATE Latin1_General_CI_AS
-	);
-
-
-
+	/*
+    -- Lógica para Grupo_Familiar (opcional)
     IF NOT EXISTS (SELECT 1 FROM Groups.Grupo_Familiar WHERE Nombre_Familia = 'FAMILIA GENÉRICA')
     BEGIN
         INSERT INTO Groups.Grupo_Familiar (Nombre_Familia, Activo)
@@ -231,11 +251,16 @@ BEGIN
     JOIN Person.Socio s ON s.Id_Persona = p.Id_Persona
     JOIN Groups.Grupo_Familiar f ON f.Nombre_Familia = 'FAMILIA GENÉRICA'
     WHERE NOT EXISTS (
-    SELECT 1 FROM Groups.Miembro_Familia WHERE Id_Socio COLLATE Latin1_General_CI_AS = s.Id_Socio COLLATE Latin1_General_CI_AS
-	);
+        SELECT 1 FROM Groups.Miembro_Familia 
+        WHERE Id_Socio COLLATE Latin1_General_CI_AS = s.Id_Socio COLLATE Latin1_General_CI_AS
+    );
+	*/
+    
 
     DROP TABLE #TempGrupoFamiliar;
+    PRINT 'Importación de grupo familiar exitosa.';
 END;
+
 
 
 
@@ -248,8 +273,9 @@ DELETE FROM Person.Socio WHERE Id_Socio = 'SN-4121';
 DELETE FROM Groups.Miembro_Familia;
 DELETE FROM Person.Socio;
 DELETE FROM Person.Persona;
+DELETE FROM Person.Tutor;
 select * from Person.Persona
-select * from Person.Socio order by Person.Socio.Id_Persona
+select * from Person.Socio 
 select * from Person.Tutor
 select * from Groups.Miembro_Familia
 
