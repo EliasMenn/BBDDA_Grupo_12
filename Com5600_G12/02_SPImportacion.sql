@@ -89,27 +89,27 @@ BEGIN
 
         -- Insertar en Socio
         INSERT INTO Person.Socio (
-    Id_Socio, Id_Persona, Id_Categoria, Id_Tutor, 
-    Telefono_Emergencia, Obra_Social, Nro_Obra_Social
-)
-SELECT
-    t.NroSocioRP,
-    p.Id_Persona,
-    100,
-    NULL,
-    NULL,
-    t.ObraSocial,
-    t.NroObraSocial
-FROM #TempResponsables t
-JOIN Person.Persona p 
-    ON p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM Person.Socio s
-    WHERE 
-        s.Id_Persona = p.Id_Persona
-        OR s.Id_Socio COLLATE Latin1_General_CI_AS = t.NroSocioRP COLLATE Latin1_General_CI_AS
-);
+			Id_Socio, Id_Persona, Id_Categoria, Id_Tutor, 
+			Telefono_Emergencia, Obra_Social, Nro_Obra_Social
+		)
+		SELECT
+			t.NroSocioRP,
+			p.Id_Persona,
+			100,
+			NULL,
+			NULL,
+			t.ObraSocial,
+			t.NroObraSocial
+		FROM #TempResponsables t
+		JOIN Person.Persona p 
+			ON p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
+		WHERE NOT EXISTS (
+			SELECT 1
+			FROM Person.Socio s
+			WHERE 
+				s.Id_Persona = p.Id_Persona
+				OR s.Id_Socio COLLATE Latin1_General_CI_AS = t.NroSocioRP COLLATE Latin1_General_CI_AS
+		);
 
         -- Insertar en Tutor
         INSERT INTO Person.Tutor (Id_Persona, Parentesco)
@@ -130,23 +130,7 @@ WHERE NOT EXISTS (
         PRINT 'Error durante la importación: ' + ERROR_MESSAGE();
     END CATCH
 END;
-
-
-
-
--- Categorias para probar
-INSERT INTO Groups.Categoria (Nombre_Cat, EdadMin, EdadMax, Descr, Costo)
-VALUES 
-    ('Infantil', 0, 12, 'Niños hasta 12 años', 500.00),
-    ('Juvenil', 13, 17, 'Adolescentes hasta 17 años', 700.00),
-    ('Adulto', 18, 64, 'Mayores de edad hasta 64', 1000.00);
-
-SELECT * FROM Person.Persona
-SELECT * FROM Person.Socio
-
 GO
-
-
 
 --Importacion de la hoja 'Grupo Familiar'
 
@@ -256,74 +240,65 @@ BEGIN
     DROP TABLE #TempGrupoFamiliar;
     PRINT 'Importación de grupo familiar exitosa.';
 END;
+GO
 
+CREATE OR ALTER PROCEDURE Activity.Importar_Actividades
+    @RutaArchivo NVARCHAR(256),
+    @NombreHoja NVARCHAR(128),
+    @RangoCeldas NVARCHAR(50) -- Ej: 'A1:C7'
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
 
+        -- Tabla temporal para importar el rango
+        CREATE TABLE #TempActividades (
+            Actividad NVARCHAR(100),
+            ValorPorMes DECIMAL(18,2),
+            Vigente_Hasta DATE
+        );
 
+        -- Importar desde Excel
+        DECLARE @SQL NVARCHAR(MAX);
+        SET @SQL = '
+            INSERT INTO #TempActividades
+            SELECT 
+                [Actividad], 
+                [Valor por mes], 
+                TRY_CONVERT(DATE, [Vigente hasta], 103)
+            FROM OPENROWSET(
+                ''Microsoft.ACE.OLEDB.16.0'',
+                ''Excel 12.0;Database=' + @RutaArchivo + ';HDR=YES;IMEX=1'',
+                ''SELECT * FROM [' + @NombreHoja + '$' + @RangoCeldas + ']'' 
+            );';
+        EXEC sp_executesql @SQL;
 
+        -- Generar EXECs como string dinámico
+        DECLARE @Dinamico NVARCHAR(MAX) = '';
 
-DELETE FROM Groups.Miembro_Familia WHERE Id_Socio = 'SN-4121';
-DELETE FROM Person.Socio WHERE Id_Socio = 'SN-4121';
+        SELECT @Dinamico += '
+        BEGIN TRY
+            EXEC Activity.Agr_Actividad 
+                @Nombre_Actividad = ''' + REPLACE(TRIM(Actividad), '''', '''''') + ''',
+                @Desc_Act = ''Importado desde Excel'',
+                @Costo = ' + CAST(ValorPorMes AS VARCHAR) + ',
+                @Vigente_Hasta = ''' + CONVERT(VARCHAR, Vigente_Hasta, 23) + ''';
+        END TRY
+        BEGIN CATCH
+            PRINT ''Error al importar: ' + REPLACE(TRIM(Actividad), '''', '''''') + ' => '' + ERROR_MESSAGE();
+        END CATCH;'
+        FROM #TempActividades
+        WHERE Actividad IS NOT NULL AND ValorPorMes IS NOT NULL AND Vigente_Hasta IS NOT NULL;
 
+        -- Ejecutar bloque
+        EXEC sp_executesql @Dinamico;
 
+        -- Limpiar
+        DROP TABLE #TempActividades;
 
-DELETE FROM Groups.Miembro_Familia;
-DELETE FROM Person.Socio;
-DELETE FROM Person.Persona;
-DELETE FROM Person.Tutor;
-select * from Person.Persona
-select * from Person.Socio 
-select * from Person.Tutor
-select * from Groups.Miembro_Familia
-
-
-
-
---Ejecuciones de SP--
-
-EXEC Person.Importar_Responsables_Pago
-    @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\TP_BDDA\BBDDA_Grupo_12\Datos socios.xlsx',
-    @NombreHoja = 'Responsables de Pago$';
-
-EXEC ImportarGrupoFamiliar
-    @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\TP_BDDA\BBDDA_Grupo_12\Datos socios.xlsx',
-    @NombreHoja = 'Grupo Familiar$';
-
-	
-
---Me permite ver los headers del excel
-	SELECT TOP 1 * 
-FROM OPENROWSET(
-    'Microsoft.ACE.OLEDB.16.0',
-    'Excel 12.0;Database=C:\Importaciones\Datos_socios.xlsx;HDR=YES;IMEX=1',
-    'SELECT * FROM [Grupo Familiar$]'
-);
-
-
-
---Select para ver que me trae los datos
-SELECT 
-	[Nro de Socio],
-	[Nombre],
-	[ DNI],
-    [ email personal],
-    [ fecha de nacimiento],
-    [ teléfono de contacto],
-    [ Nombre de la obra social o prepaga],
-    [nro# de socio obra social/prepaga]
-FROM OPENROWSET(
-    'Microsoft.ACE.OLEDB.16.0',
-    'Excel 12.0;Database=C:\Importaciones\Datos_socios.xlsx;HDR=YES;IMEX=1',
-    'SELECT * FROM [Grupo Familiar$]'
-);
-
-
-
-
-EXEC sp_MSset_oledb_prop 
-    N'Microsoft.ACE.OLEDB.16.0', 
-    N'AllowInProcess', 1;
-
-EXEC sp_MSset_oledb_prop 
-    N'Microsoft.ACE.OLEDB.16.0', 
-    N'DynamicParameters', 1;
-
+        PRINT 'Importación de actividades completada.';
+    END TRY
+    BEGIN CATCH
+        PRINT 'Error general en la importación: ' + ERROR_MESSAGE();
+    END CATCH
+END

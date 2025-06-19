@@ -257,7 +257,8 @@ BEGIN
 		Id_Actividad INT IDENTITY (200,1) PRIMARY KEY,
 		Nombre VARCHAR(50),
 		Costo DECIMAL,
-		Vigencia DATE
+		Descr VARCHAR(50),
+		Vigente_Hasta DATE
 	)
 END
 

@@ -534,29 +534,52 @@ GO
 -- Agregar referencia detalle
 CREATE OR ALTER PROCEDURE Payment.Agr_Referencia_Detalle
     @Referencia INT,
-    @Tipo_Referencia INT,
     @Descripcion VARCHAR(50)
 AS
 BEGIN
     BEGIN TRY
+		IF EXISTS (SELECT 1 FROM Payment.Referencia_Detalle WHERE Referencia = @Referencia)
+		BEGIN
+			PRINT('No puede haber numeros de referencia repetidos')
+            RAISERROR('.', 16, 1)
+		END
+		DECLARE @TIPO_REFERENCIA INTEGER
         SET @Descripcion = TRIM(@Descripcion)
+
         IF @Descripcion = '' OR LEN(@Descripcion) > 50
         BEGIN
             PRINT('Descripción inválida')
-            RAISERROR('.',16,1)
+            RAISERROR('.', 16, 1)
         END
 
-        IF @Referencia < 100 OR @Tipo_Referencia NOT IN (1, 2, 3)
+        IF @Referencia < 100 OR @Referencia > 400
         BEGIN
-            PRINT('Referencia o tipo inválido')
-            RAISERROR('.',16,1)
+            PRINT('La referencia debe ser mayor o igual a 100 y menor a 400')
+            RAISERROR('.', 16, 1)
         END
 
-        INSERT INTO Payment.Referencia_Detalle (
-            Referencia, Tipo_Referencia, Descripcion)
-        VALUES (
-            @Referencia, @Tipo_Referencia, @Descripcion
-        )
+		IF @Referencia > 300
+		BEGIN 
+			SET @TIPO_REFERENCIA = 3
+		END
+		ELSE
+		IF @Referencia < 200
+		BEGIN
+			SET @TIPO_REFERENCIA = 1
+		END
+		ELSE
+		BEGIN 
+			SET @TIPO_REFERENCIA = 2
+		END
+
+        IF @Tipo_Referencia NOT IN (1, 2, 3)
+        BEGIN
+            PRINT('Tipo de referencia inválido (debe ser 1, 2 o 3)')
+            RAISERROR('.', 16, 1)
+        END
+
+        INSERT INTO Payment.Referencia_Detalle (Referencia, Tipo_Referencia, Descripcion)
+        VALUES (@Referencia, @Tipo_Referencia, @Descripcion)
     END TRY
     BEGIN CATCH
         IF ERROR_SEVERITY() > 10
@@ -787,7 +810,6 @@ END
 GO
 
 
-
 CREATE OR ALTER PROCEDURE Groups.Agr_Grupo_Familiar
 	@Nombre_Familia VARCHAR(50),
 	@Id_Socio INT  -- socio que se va a asociar al grupo recién creado
@@ -904,72 +926,74 @@ GO
 
  -- Para la tabla Actividad --
 CREATE OR ALTER PROCEDURE Activity.Agr_Actividad
-	@Nombre_Actividad VARCHAR(50),
-	@Desc_Act VARCHAR(50),
-	@Costo DECIMAL
+    @Nombre_Actividad VARCHAR(50),
+    @Desc_Act VARCHAR(50),
+    @Costo DECIMAL,
+    @Vigente_Hasta DATE
 AS
 BEGIN
-	BEGIN TRY
-		DECLARE @Id INTEGER
-		SET @Nombre_Actividad = TRIM(@Nombre_Actividad)
+    BEGIN TRY
+        DECLARE @Id INTEGER
+        SET @Nombre_Actividad = TRIM(@Nombre_Actividad)
 
-		IF EXISTS (SELECT 1 FROM Activity.Actividad WHERE Nombre = @Nombre_Actividad)
-		BEGIN
-			PRINT('Ya existe una actividad con ese nombre')
-			RAISERROR('.',16,1)
-		END
+        IF EXISTS (SELECT 1 FROM Activity.Actividad WHERE Nombre = @Nombre_Actividad)
+        BEGIN
+            PRINT('Ya existe una actividad con ese nombre')
+            RAISERROR('.',16,1)
+        END
 
-		IF @Nombre_Actividad IS NULL 
-			OR LTRIM(RTRIM(@Nombre_Actividad)) = ''
-			OR @Nombre_Actividad COLLATE Latin1_General_CI_AI LIKE '%[^a-z ]%'
-		BEGIN
-			PRINT('El nombre de la actividad no es válido.')
-			RAISERROR('El nombre de la actividad no es válido.', 16, 1)
-		END
+        IF @Nombre_Actividad IS NULL 
+            OR LTRIM(RTRIM(@Nombre_Actividad)) = ''
+            OR @Nombre_Actividad COLLATE Latin1_General_CI_AI LIKE '%[^a-z ]%'
+        BEGIN
+            PRINT('El nombre de la actividad no es válido.')
+            RAISERROR('El nombre de la actividad no es válido.', 16, 1)
+        END
 
+        SET @Desc_Act = TRIM(@Desc_Act)
+        IF @Desc_Act = '' OR @Desc_Act LIKE '%[^a-zA-Z ]%'
+        BEGIN
+            PRINT('La descripcion de la actividad no es valida.')
+            RAISERROR('La descripcion de la actividad no es valida.',16,1)
+        END
 
-		IF EXISTS (SELECT 1 FROM Activity.Actividad WHERE Nombre = @Nombre_Actividad)
-		BEGIN
-			PRINT('Ya existe una actividad con el mismo nombre.')
-			RAISERROR('Ya existe una activdad con el mismo nombre.',16,1)
-		END
+        IF TRY_CONVERT(DECIMAL, @Costo) IS NULL 
+        BEGIN
+            PRINT('El costo no se puede transformar en decimal')
+            RAISERROR('El costo no se puede transformar en decimal',16,1)
+        END
 
-		SET @Desc_Act = TRIM(@Desc_Act)
-		IF @Desc_Act = '' OR @Desc_Act LIKE '%[^a-zA-Z ]%'
-		BEGIN
-			PRINT('La descripcion de la actividad no es valida.')
-			RAISERROR('La descripcion de la actividad no es valida.',16,1)
-		END
+        IF @Costo < 0
+        BEGIN
+            PRINT('El costo no puede ser negativo')
+            RAISERROR('El costo no puede ser negativo',16,1)
+        END
 
-		IF TRY_CONVERT(decimal,@Costo) IS NULL 
-		BEGIN
-			PRINT('El costo no se puede transformar en decimal')
-			RAISERROR('El costo no se puede transformar en decimal',16,1)
-		END
+        IF @Vigente_Hasta IS NULL
+        BEGIN
+            PRINT('La fecha de vigencia no puede ser nula')
+            RAISERROR('La fecha de vigencia no puede ser nula', 16, 1)
+        END
+    END TRY
+    BEGIN CATCH
+        IF ERROR_SEVERITY() > 10
+        BEGIN
+            RAISERROR('Ocurrió algo en la creación de Actividad',16,1)
+            RETURN;
+        END
+    END CATCH
 
-		IF @Costo < 0
-		BEGIN
-			PRINT('El costo no puede ser negativo')
-			RAISERROR('El costo no puede ser negativo',16,1)
-		END
-	END TRY
-	BEGIN CATCH
-		IF ERROR_SEVERITY() > 10
-		BEGIN
-			RAISERROR('Ocurrio algo en la creacion de Actividad',16,1)
-			RETURN;
-		END
-	END CATCH
-	INSERT INTO Activity.Actividad(Nombre,Descr,Costo)
-	VALUES(@Nombre_Actividad,@Desc_Act,@Costo)
-	
-	SET @Id = SCOPE_IDENTITY()
+    INSERT INTO Activity.Actividad(Nombre, Descr, Costo, Vigente_Hasta)
+    VALUES(@Nombre_Actividad, @Desc_Act, @Costo, @Vigente_Hasta)
+    
+    SET @Id = SCOPE_IDENTITY()
 
-	EXEC Payment.Agr_Referencia_Detalle
-	@Id,
-	@Nombre_Actividad
+    EXEC Payment.Agr_Referencia_Detalle
+        @Referencia = @Id,
+        @Descripcion = @Nombre_Actividad
 END
 GO
+
 
 -- Para Tabla Act Extra
 
@@ -1312,61 +1336,6 @@ BEGIN
 			RETURN;
 		END
 	END CATCH
-END
-GO
-CREATE OR ALTER PROCEDURE Payment.Agr_Referencia_Detalle
-    @Referencia INT,
-    @Descripcion VARCHAR(50)
-AS
-BEGIN
-    BEGIN TRY
-		IF EXISTS (SELECT 1 FROM Payment.Referencia_Detalle WHERE Referencia = @Referencia)
-		BEGIN
-			PRINT('No puede haber numeros de referencia repetidos')
-            RAISERROR('.', 16, 1)
-		END
-		DECLARE @TIPO_REFERENCIA INTEGER
-        SET @Descripcion = TRIM(@Descripcion)
-
-        IF @Descripcion = '' OR LEN(@Descripcion) > 50
-        BEGIN
-            PRINT('Descripción inválida')
-            RAISERROR('.', 16, 1)
-        END
-
-        IF @Referencia < 100 OR @Referencia > 400
-        BEGIN
-            PRINT('La referencia debe ser mayor o igual a 100 y menor a 400')
-            RAISERROR('.', 16, 1)
-        END
-
-		IF @Referencia > 300
-		BEGIN 
-			SET @TIPO_REFERENCIA = 3
-		END
-		ELSE
-		IF @Referencia < 200
-		BEGIN
-			SET @TIPO_REFERENCIA = 1
-		END
-		ELSE
-		BEGIN 
-			SET @TIPO_REFERENCIA = 2
-		END
-
-        IF @Tipo_Referencia NOT IN (1, 2, 3)
-        BEGIN
-            PRINT('Tipo de referencia inválido (debe ser 1, 2 o 3)')
-            RAISERROR('.', 16, 1)
-        END
-
-        INSERT INTO Payment.Referencia_Detalle (Referencia, Tipo_Referencia, Descripcion)
-        VALUES (@Referencia, @Tipo_Referencia, @Descripcion)
-    END TRY
-    BEGIN CATCH
-        IF ERROR_SEVERITY() > 10
-            RAISERROR('Error al registrar la referencia del detalle', 16, 1)
-    END CATCH
 END
 GO
 
