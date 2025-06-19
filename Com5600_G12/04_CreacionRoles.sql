@@ -6,9 +6,11 @@
 --Medina, Juan 46682620
 --Mennella, Elias Damian 46357008
 ----------------------------------------------------------------
-USE COM5600_G12;  -- Cambia al contexto de tu base de datos
-GO
 
+USE master
+
+USE Com5600_G12
+GO
 -- Creación de roles de base de datos
 CREATE ROLE Rol_Jefe_Tesoreria;
 CREATE ROLE Rol_Administrativo_Cobranzas;
@@ -28,139 +30,148 @@ FROM sys.database_principals
 WHERE type = 'R' AND name LIKE 'Rol_%'
 ORDER BY name;
 
--------------------------PARA ROL DE TESORERIA-------------------------
--- Permisos sobre esquema Payment (operaciones financieras completas)
-GRANT SELECT, INSERT, UPDATE ON SCHEMA::Payment TO Rol_Jefe_Tesoreria;
+-------------------------------------------------- PARA ROL DE JEFE DE TESORERIA --------------------------------------------------
+-- Permisos sobre esquema Payment (puede ver, insertar, eliminar y modoficar, pero no alterar la tabla)
+GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::Payment TO Rol_Jefe_Tesoreria;
+-----------------------------------------------------------------------------------------------------------------------------------
 
--- Permisos sobre datos personales (solo lectura)
-GRANT SELECT ON SCHEMA::Person TO Rol_Jefe_Tesoreria;
+------------------------------------------ PARA ROL DE JEFE DE ADMIINSTRADOR DE COBRANZAS ------------------------------------------
+-- Permisos específicos para ver y modificar facturas
+GRANT SELECT, UPDATE ON Payment.Factura TO Rol_Administrativo_Cobranzas
 
--- Permisos sobre grupos (solo lectura)
-GRANT SELECT ON SCHEMA::Groups TO Rol_Jefe_Tesoreria;
+-- Permisos específicos para ver Detalles_Factura
+GRANT SELECT ON Payment.Detalle_Factura TO Rol_Administrativo_Cobranzas
 
--- Restricciones importantes
-DENY DELETE ON SCHEMA::Payment TO Rol_Jefe_Tesoreria; -- Evitar borrado físico
-DENY ALTER ON SCHEMA::Payment TO Rol_Jefe_Tesoreria; -- No puede modificar estructura
+-- Permisos específicos para ver Morosidad
+GRANT SELECT ON Payment.Morosidad TO Rol_Administrativo_Cobranzas
 
--- Restricción específica para columnas sensibles
-DENY SELECT ON Payment.Cuenta(SaldoCuenta) TO Rol_Jefe_Tesoreria;
-DENY SELECT ON Payment.Pago(Monto) TO Rol_Jefe_Tesoreria;
+-- Permisos específicos para ver y insertar Pagos
+GRANT SELECT, INSERT ON Payment.Pago TO Rol_Administrativo_Cobranzas
 
+-- Permisos específicos para ver, insertar y modificar Medios de Pago
+GRANT SELECT, INSERT, UPDATE ON Payment.Medio_Pago TO Rol_Administrativo_Cobranzas
 
+-- Permisos específicos para ver y modificar Cuenta
+GRANT SELECT, UPDATE ON Payment.Cuenta TO Rol_Administrativo_Cobranzas
 
--------------------------PARA ROL DE ADMINISTRATIVO COBRANZAS------------------------
--- Permisos específicos para gestión de facturas
-GRANT SELECT, INSERT, UPDATE ON Payment.Factura TO Rol_Administrativo_Cobranzas;
-GRANT SELECT ON Payment.Detalle_Factura TO Rol_Administrativo_Cobranzas;
-GRANT SELECT ON Payment.Morosidad TO Rol_Administrativo_Cobranzas;
-
--- Permisos sobre datos de personas (solo lectura)
-GRANT SELECT ON Person.Persona TO Rol_Administrativo_Cobranzas;
-GRANT SELECT ON Person.Socio TO Rol_Administrativo_Cobranzas;
-
--- Restricciones
-DENY DELETE ON Payment.Factura TO Rol_Administrativo_Cobranzas;
-DENY INSERT, UPDATE, DELETE ON Payment.Pago TO Rol_Administrativo_Cobranzas;
+-- Permisos específicos para ver Refrencia de Detalle
+GRANT SELECT ON Payment.Referencia_Detalle TO Rol_Administrativo_Cobranzas
+-----------------------------------------------------------------------------------------------------------------------------------
 
 
-
--------------------------PARA ROL DE ADMINISTRATIVO MOROCIDAD------------------------
+--------------------------------------------- PARA ROL DE ADMIINSTRATIVO DE MOROSIDAD ---------------------------------------------
 -- Permisos para gestión de morosidad
-GRANT SELECT, UPDATE ON Payment.Morosidad TO Rol_Administrativo_Morosidad;
+GRANT SELECT, UPDATE, INSERT, DELETE ON Payment.Morosidad TO Rol_Administrativo_Morosidad;
+
+-- Permisos para ver Facturas
 GRANT SELECT ON Payment.Factura TO Rol_Administrativo_Morosidad;
 
--- Permisos relacionados
-GRANT SELECT ON Person.Persona TO Rol_Administrativo_Morosidad;
-GRANT SELECT ON Person.Socio TO Rol_Administrativo_Morosidad;
+-- Permisos para ver Detalles de Factura
+GRANT SELECT ON Payment.Detalle_Factura TO Rol_Administrativo_Morosidad;
 
--- Restricciones
-DENY INSERT, DELETE ON Payment.Morosidad TO Rol_Administrativo_Morosidad;
+-- Permisos para ver Cuenta
+GRANT SELECT ON Payment.Cuenta TO Rol_Administrativo_Morosidad;
+
+-- Permisos para ver Pagos
+GRANT SELECT ON Payment.Pago TO Rol_Administrativo_Morosidad;
+-----------------------------------------------------------------------------------------------------------------------------------
 
 
+-------------------------------------------- PARA ROL DE ADMIINSTRATIVO DE FACTURACION --------------------------------------------
+-- Permisos para ver, insertar, modifcat y borrar Facturas
+GRANT SELECT, INSERT, UPDATE, DELETE ON Payment.Detalle_Factura TO Rol_Administrativo_Facturacion;
 
--------------------------PARA ROL DE ADMINISTRATIVO FACTURACION-------------------------
--- Permisos para facturación
+-- Permisos para ver, insertar y modificar Detalles de Factura
 GRANT SELECT, INSERT, UPDATE ON Payment.Factura TO Rol_Administrativo_Facturacion;
-GRANT SELECT, INSERT, UPDATE ON Payment.Detalle_Factura TO Rol_Administrativo_Facturacion;
 
--- Permisos para consultar categorías
-GRANT SELECT ON Groups.Categoria TO Rol_Administrativo_Facturacion;
+-- Permisos para ver Referencia de Detalles
+GRANT SELECT ON Payment.Referencia_Detalle TO Rol_Administrativo_Facturacion;
 
--- Restricciones
-DENY DELETE ON Payment.Factura TO Rol_Administrativo_Facturacion;
-DENY DELETE ON Payment.Detalle_Factura TO Rol_Administrativo_Facturacion;
+-- Permisos para ver Cuenta
+GRANT SELECT ON Payment.Cuenta TO Rol_Administrativo_Facturacion;
+
+-- Permisos para ver morosidad
+GRANT SELECT ON Payment.Morosidad TO Rol_Administrativo_Facturacion;
+
+
+-- Permisos para ver Pagos
+GRANT SELECT ON Payment.Pago TO Rol_Administrativo_Facturacion;
+-----------------------------------------------------------------------------------------------------------------------------------
 
 
 
--------------------------PARA ROL DE ADMINISTRATIVO SOCIO-------------------------
--- Permisos para gestión de socios
-GRANT SELECT, INSERT, UPDATE ON Person.Socio TO Rol_Administrativo_Socio;
+
+------------------------------------------------PARA ROL DE ADMINISTRATIVO DE SOCIO------------------------------------------------
+-- Permisos para ver, insertar y modificar personas
 GRANT SELECT, INSERT, UPDATE ON Person.Persona TO Rol_Administrativo_Socio;
 
--- Permisos para consultar categorías
+-- Permisos para ver, insertar y modificar tutores
+GRANT SELECT, INSERT, UPDATE ON Person.Tutor TO Rol_Administrativo_Socio;
+
+-- Permisos para ver, insertar y modificar socios
+GRANT SELECT, INSERT, UPDATE ON Person.Socio TO Rol_Administrativo_Socio;
+
+-- Permisos para ver, insertar y modificar grupos familiares
+GRANT SELECT, INSERT, UPDATE ON Groups.Grupo_Familiar TO Rol_Administrativo_Socio;
+
+-- Permisos para ver, insertar y modificar miembros de familias
+GRANT SELECT, INSERT, UPDATE ON Groups.Miembro_Familia TO Rol_Administrativo_Socio;
+
+-- Permisos para consultar categorías (no modifica)
 GRANT SELECT ON Groups.Categoria TO Rol_Administrativo_Socio;
-
--- Restricciones
-DENY DELETE ON Person.Socio TO Rol_Administrativo_Socio;
-DENY DELETE ON Person.Persona TO Rol_Administrativo_Socio;
+-----------------------------------------------------------------------------------------------------------------------------------
 
 
+------------------------------------------------PARA ROL DE SOCIO WEB------------------------------------------------
+--No deberia poder hacer nada en realidad, osea no es un empleado, es un socio, solo deberia ver su cuenta
+GRANT SELECT ON Payment.ver_Cuenta TO Rol_Socio_Web; --le asignamos una vista
 
--------------------------PARA ROL DE SOCIO WEB-------------------------
--- Permisos mínimos para socios
-GRANT SELECT ON Person.Socio TO Rol_Socio_Web;
-GRANT SELECT ON Payment.Factura TO Rol_Socio_Web;
-GRANT SELECT ON Payment.Medio_Pago TO Rol_Socio_Web;
-GRANT SELECT ON Payment.Cuenta TO Rol_Socio_Web;
-GRANT INSERT ON Payment.Pago TO Rol_Socio_Web;
+--SP para poder ver su tabla dependiendo de su Login #a testear
+CREATE OR ALTER PROCEDURE Payment.ver_Cuenta
+	@Login NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
 
--- Restricciones
-DENY SELECT ON Person.Persona TO Rol_Socio_Web;
-DENY SELECT ON Payment.Morosidad TO Rol_Socio_Web;
+    SELECT c.*
+    FROM Payment.Cuenta c
+    JOIN Person.Mapeo_UsuarioPersona m 
+        ON c.Id_Persona = m.Id_Persona
+    WHERE m.Login_Name = @Login;
+END;
+/*ESE SOCIO WEB PODRA VER SU CUENTA YA QUE LE DAMOS EL PERMISO DE USAR ESTE SP
+Y NADA MAS */
 
-
-
--------------------------PARA ROL DE PRESIDENT-------------------------
--- Control total sobre la base de datos
+---------------------------------------------------------- PARA ROL DE PRESIDENT ----------------------------------------------------------
+-- Control total sobre la base de datos, si tu presidente te pide el control se lo das
 GRANT CONTROL ON DATABASE::COM5600_G12 TO Rol_Presidente;
+-----------------------------------------------------------------------------------------------------------------------------------
 
 
-
--------------------------PARA ROL DE VICEPRESIDENTE-------------------------
+---------------------------------------------------------- PARA ROL DE VICEPRESIDENTE ----------------------------------------------------------
 -- Permisos amplios de consulta y actualización
-GRANT SELECT, UPDATE ON SCHEMA::Payment TO Rol_Vicepresidente;
-GRANT SELECT, UPDATE ON SCHEMA::Person TO Rol_Vicepresidente;
-GRANT SELECT ON SCHEMA::Activity TO Rol_Vicepresidente;
-
--- Restricciones
-DENY DELETE ON SCHEMA::Payment TO Rol_Vicepresidente;
-DENY ALTER ON DATABASE::COM5600_G12 TO Rol_Vicepresidente;
+GRANT CONTROL ON DATABASE::Com5600_G12 TO Rol_Presidente;
+DENY DELETE ON DATABASE::Com5600_G12 TO Rol_Vicepresidente
+-----------------------------------------------------------------------------------------------------------------------------------
 
 
-
--------------------------PARA ROL DE SECRETARIO-------------------------
--- Permisos de consulta básicos
+---------------------------------------------------------- PARA ROL DE SECRETARIO -------------------------
+-- Lectura de esquemas completos
 GRANT SELECT ON SCHEMA::Person TO Rol_Secretario;
 GRANT SELECT ON SCHEMA::Groups TO Rol_Secretario;
-
--- Restricciones
-DENY INSERT, UPDATE, DELETE ON SCHEMA::Person TO Rol_Secretario;
-
-
-
-----------------------PARA ROL DE VOCALES----------------------
--- Permisos mínimos de consulta (versión corregida)
-GRANT SELECT ON SCHEMA::Activity TO Rol_Vocales;  -- Acceso a todo el esquema (solo lectura)
--- O si prefieres acceso solo a la tabla Asistencia:
-GRANT SELECT ON Activity.Asistencia TO Rol_Vocales;  -- Sintaxis explícita con corchetes
-
--- Restricciones (versión corregida)
-DENY INSERT, UPDATE, DELETE ON SCHEMA::Activity TO Rol_Vocales;
+GRANT SELECT ON SCHEMA::Activity TO Rol_Secretario;
+-- (opcional) Información climática / jornadas, por si se olvida que dio llovio
+GRANT SELECT ON SCHEMA::Jornada TO Rol_Secretario;
+-----------------------------------------------------------------------------------------------------------------------------------
 
 
+---------------------------------------------------------- PARA ROL DE VOCALES -------------------------
+-- Permisos mínimos de consulta (solo debe saber de las actividades )
+GRANT SELECT ON SCHEMA::Activity TO Rol_Vocales;
+-----------------------------------------------------------------------------------------------------------------------------------
 
-
-------PARA VER PERMISOS ASIGNADOS----
+------PARA VER PERMISOS ASIGNADOS---- (es para revisar si se guardaron bien, lo dejamos por si las dudas)
+/*
 SELECT 
     r.name AS Rol,
     p.permission_name AS Permiso,
@@ -171,20 +182,33 @@ JOIN sys.database_principals r ON p.grantee_principal_id = r.principal_id
 LEFT JOIN sys.objects o ON p.major_id = o.object_id
 WHERE r.type = 'R' AND r.name LIKE 'Rol_%'
 ORDER BY r.name, p.permission_name;
+*/
 
 ----------------------------------------------------------------------------------
 -------------CREACION DE USUARIOS-------------------------------------------------
 
-CREATE USER JuanUser FOR LOGIN JuanUser;
-CREATE USER PedroUser FOR LOGIN PedroUser;
-CREATE USER FedeUser FOR LOGIN FedeUser;
-CREATE USER EliasUser FOR LOGIN EliasUser;
+CREATE USER JefedeTesoreria WITHOUT LOGIN;
+CREATE USER AdminCobranzas WITHOUT LOGIN;
+CREATE USER AdminMorosidad WITHOUT LOGIN;
+CREATE USER AdminFacturacion WITHOUT LOGIN;
+CREATE USER AdminSocios WITHOUT LOGIN;
+CREATE USER SocioWeb WITHOUT LOGIN;
+CREATE USER Presidente WITHOUT LOGIN;
+CREATE USER Vicepresidente WITHOUT LOGIN;
+CREATE USER Secretario WITHOUT LOGIN;
+CREATE USER Vocales WITHOUT LOGIN;
 
 ------------ASIGNAR ROLES A USUARIOS------------
-ALTER ROLE Rol_Jefe_Tesoreria ADD MEMBER JuanUser;
-ALTER ROLE Rol_Administrativo_Cobranzas ADD MEMBER PedroUser;
-ALTER ROLE Rol_Administrativo_Morosidad ADD MEMBER FedeUser;
-ALTER ROLE Rol_Administrativo_Facturacion ADD MEMBER EliasUser;
+ALTER ROLE Rol_Jefe_Tesoreria ADD MEMBER JefedeTesoreria;
+ALTER ROLE Rol_Administrativo_Cobranzas ADD MEMBER AdminCobranzas;
+ALTER ROLE Rol_Administrativo_Morosidad ADD MEMBER AdminMorosidad;
+ALTER ROLE Rol_Administrativo_Facturacion ADD MEMBER AdminFacturacion;
+ALTER ROLE Rol_Administrativo_Socio ADD MEMBER AdminSocios;
+ALTER ROLE Rol_Socio_Web ADD MEMBER SocioWeb;
+ALTER ROLE Rol_Presidente ADD MEMBER Presidente;
+ALTER ROLE Rol_Vicepresidente ADD MEMBER Vicepresidente;
+ALTER ROLE Rol_Secretario ADD MEMBER Secretario;
+ALTER ROLE Rol_Vocales ADD MEMBER Vocales;
 
 ------En Caso dde Borrar los roles--------------
 /*
