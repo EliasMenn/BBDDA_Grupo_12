@@ -42,6 +42,11 @@ BEGIN
     BEGIN TRY
         SET NOCOUNT ON;
 
+		CREATE TABLE #DNI_Repetidos (
+		DNI VARCHAR(15)
+		);
+
+
         -- Tabla temporal
         CREATE TABLE #TempResponsables (
             NroSocioRP VARCHAR(20),
@@ -78,39 +83,50 @@ BEGIN
         EXEC sp_executesql @SQL;
 
         -- Insertar en Persona
-        INSERT INTO Person.Persona (Nombre, Apellido, DNI, Email, Fecha_Nacimiento, Telefono_Contacto)
-        SELECT DISTINCT
-            Nombre, Apellido, DNI, Email, FechaNacimiento, TelefonoContacto
-        FROM #TempResponsables t
-        WHERE NOT EXISTS (
-            SELECT 1 FROM Person.Persona p 
-            WHERE p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
-        );
+		INSERT INTO Person.Persona (Nombre, Apellido, DNI, Email, Fecha_Nacimiento, Telefono_Contacto)
+		SELECT 
+			t.Nombre, t.Apellido, t.DNI, t.Email, t.FechaNacimiento, t.TelefonoContacto
+		FROM #TempResponsables t
+		WHERE NOT EXISTS (
+			SELECT 1 FROM Person.Persona p 
+			WHERE p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
+		)
+		AND t.DNI IN (
+			SELECT DNI
+			FROM #TempResponsables
+			GROUP BY DNI
+			HAVING COUNT(*) = 1  -- Solo DNI no duplicados
+		);
+		PRINT 'Los siguientes DNIs están duplicados en el archivo y no fueron insertados:';
+		SELECT DNI, COUNT(*) AS Cantidad
+		FROM #TempResponsables
+		GROUP BY DNI
+		HAVING COUNT(*) > 1;
+
 
         -- Insertar en Socio
         INSERT INTO Person.Socio (
     Id_Socio, Id_Persona, Id_Categoria, Id_Tutor, 
     Telefono_Emergencia, Obra_Social, Nro_Obra_Social
-)
-SELECT
-    t.NroSocioRP,
-    p.Id_Persona,
-    100,
-    NULL,
-    NULL,
-    t.ObraSocial,
-    t.NroObraSocial
-FROM #TempResponsables t
-JOIN Person.Persona p 
-    ON p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM Person.Socio s
-    WHERE 
-        s.Id_Persona = p.Id_Persona
-        OR s.Id_Socio COLLATE Latin1_General_CI_AS = t.NroSocioRP COLLATE Latin1_General_CI_AS
-);
-
+		)
+		SELECT
+			t.NroSocioRP,
+			p.Id_Persona,
+			100,
+			NULL,
+			NULL,
+			t.ObraSocial,
+			t.NroObraSocial
+		FROM #TempResponsables t
+		JOIN Person.Persona p 
+			ON p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
+		WHERE NOT EXISTS (
+			SELECT 1
+			FROM Person.Socio s
+			WHERE 
+				s.Id_Socio COLLATE Latin1_General_CI_AS = t.NroSocioRP COLLATE Latin1_General_CI_AS
+				OR s.Id_Persona = p.Id_Persona
+		);
         -- Insertar en Tutor
         INSERT INTO Person.Tutor (Id_Persona, Parentesco)
         SELECT DISTINCT
@@ -156,6 +172,10 @@ CREATE OR ALTER PROCEDURE ImportarGrupoFamiliar
 AS
 BEGIN
     SET NOCOUNT ON;
+	CREATE TABLE #DNI_Repetidos (
+    DNI VARCHAR(15)
+	);
+
 
     CREATE TABLE #TempGrupoFamiliar (
         Id_Socio VARCHAR(20),
@@ -193,11 +213,37 @@ BEGIN
     EXEC sp_executesql @SQL;
 
     -- Insertar en Persona
-    INSERT INTO Person.Persona (Nombre, Apellido, DNI, Email, Fecha_Nacimiento, Telefono_Contacto)
-    SELECT DISTINCT
-        Nombre, Apellido, DNI, Email, FechaNacimiento, TelefonoContacto
+    DECLARE @Nombre VARCHAR(25), @Apellido VARCHAR(25), @DNI VARCHAR(10),
+            @Email VARCHAR(50), @FechaNacimiento DATE, @TelefonoContacto VARCHAR(15);
+
+    DECLARE cur CURSOR FOR
+    SELECT Nombre, Apellido, DNI, Email, FechaNacimiento, TelefonoContacto
+    FROM #TempGrupoFamiliar;
+
+    OPEN cur;
+    FETCH NEXT FROM cur INTO @Nombre, @Apellido, @DNI, @Email, @FechaNacimiento, @TelefonoContacto;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        EXEC Person.Agr_Persona
+            @Nombre = @Nombre,
+            @Apellido = @Apellido,
+            @DNI = @DNI,
+            @Email = @Email,
+            @Fecha_Nacimiento = @FechaNacimiento,
+            @Telefono_Contacto = @TelefonoContacto;
+
+        FETCH NEXT FROM cur INTO @Nombre, @Apellido, @DNI, @Email, @FechaNacimiento, @TelefonoContacto;
+    END
+
+    CLOSE cur;
+    DEALLOCATE cur;
+
+    -- Guardar los que no se pudieron insertar por repetición
+    INSERT INTO #DNI_Repetidos (DNI)
+    SELECT DISTINCT t.DNI
     FROM #TempGrupoFamiliar t
-    WHERE NOT EXISTS (
+    WHERE EXISTS (
         SELECT 1 FROM Person.Persona p 
         WHERE p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
     );
@@ -218,6 +264,7 @@ BEGIN
         WHERE s.Id_Socio COLLATE Latin1_General_CI_AS = t.Id_Socio COLLATE Latin1_General_CI_AS
     );
 
+
     -- Asignar Id_Tutor a los socios del grupo familiar
     UPDATE S
     SET S.Id_Tutor = T.Id_Tutor
@@ -230,28 +277,34 @@ BEGIN
         ON T.Id_Persona = STutor.Id_Persona
     WHERE S.Id_Tutor IS NULL;
 
-	/*
-    -- Lógica para Grupo_Familiar (opcional)
-    IF NOT EXISTS (SELECT 1 FROM Groups.Grupo_Familiar WHERE Nombre_Familia = 'FAMILIA GENÉRICA')
-    BEGIN
-        INSERT INTO Groups.Grupo_Familiar (Nombre_Familia, Activo)
-        VALUES ('FAMILIA GENÉRICA', 1);
-    END
+	--Grupo familiar 
+	INSERT INTO Groups.Grupo_Familiar (Nombre_Familia, Activo)
+	SELECT 
+		'Familia ' + p.Apellido AS Nombre_Familia,
+		1 AS Activo
+	FROM Person.Tutor t
+	JOIN Person.Persona p ON p.Id_Persona = t.Id_Persona
+	WHERE NOT EXISTS (
+		SELECT 1
+		FROM Groups.Grupo_Familiar gf
+		WHERE gf.Nombre_Familia = 'Familia ' + p.Apellido
+	);
 
-    INSERT INTO Groups.Miembro_Familia (Id_Socio, Id_Familia)
-    SELECT
-        s.Id_Socio,
-        f.Id_Grupo_Familiar
-    FROM #TempGrupoFamiliar t
-    JOIN Person.Persona p ON p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
-    JOIN Person.Socio s ON s.Id_Persona = p.Id_Persona
-    JOIN Groups.Grupo_Familiar f ON f.Nombre_Familia = 'FAMILIA GENÉRICA'
-    WHERE NOT EXISTS (
-        SELECT 1 FROM Groups.Miembro_Familia 
-        WHERE Id_Socio COLLATE Latin1_General_CI_AS = s.Id_Socio COLLATE Latin1_General_CI_AS
-    );
-	*/
-    
+	
+	--Insertamos niños
+	INSERT INTO Groups.Miembro_Familia (Id_Socio, Id_Familia)
+	SELECT
+		s.Id_Socio,
+		gf.Id_Grupo_Familiar
+	FROM Person.Socio s
+	JOIN Person.Tutor t ON t.Id_Tutor = s.Id_Tutor
+	JOIN Person.Persona p ON p.Id_Persona = t.Id_Persona
+	JOIN Groups.Grupo_Familiar gf ON gf.Nombre_Familia = 'Familia ' + p.Apellido
+	WHERE NOT EXISTS (
+		SELECT 1
+		FROM Groups.Miembro_Familia mf
+		WHERE mf.Id_Socio = s.Id_Socio
+	);
 
     DROP TABLE #TempGrupoFamiliar;
     PRINT 'Importación de grupo familiar exitosa.';
@@ -260,12 +313,7 @@ END;
 
 
 
-
-DELETE FROM Groups.Miembro_Familia WHERE Id_Socio = 'SN-4121';
-DELETE FROM Person.Socio WHERE Id_Socio = 'SN-4121';
-
-
-
+DELETE FROM Groups.Grupo_Familiar
 DELETE FROM Groups.Miembro_Familia;
 DELETE FROM Person.Socio;
 DELETE FROM Person.Persona;
@@ -273,57 +321,19 @@ DELETE FROM Person.Tutor;
 select * from Person.Persona
 select * from Person.Socio 
 select * from Person.Tutor
+select * from Groups.Grupo_Familiar
 select * from Groups.Miembro_Familia
-
-
 
 
 --Ejecuciones de SP--
 
 EXEC Person.Importar_Responsables_Pago
-    @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\TP_BDDA\BBDDA_Grupo_12\Datos socios.xlsx',
+    @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\Datos socios.xlsx',
     @NombreHoja = 'Responsables de Pago$';
 
 EXEC ImportarGrupoFamiliar
-    @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\TP_BDDA\BBDDA_Grupo_12\Datos socios.xlsx',
+    @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\Datos socios.xlsx',
     @NombreHoja = 'Grupo Familiar$';
 
 	
-
---Me permite ver los headers del excel
-	SELECT TOP 1 * 
-FROM OPENROWSET(
-    'Microsoft.ACE.OLEDB.16.0',
-    'Excel 12.0;Database=C:\Importaciones\Datos_socios.xlsx;HDR=YES;IMEX=1',
-    'SELECT * FROM [Grupo Familiar$]'
-);
-
-
-
---Select para ver que me trae los datos
-SELECT 
-	[Nro de Socio],
-	[Nombre],
-	[ DNI],
-    [ email personal],
-    [ fecha de nacimiento],
-    [ teléfono de contacto],
-    [ Nombre de la obra social o prepaga],
-    [nro# de socio obra social/prepaga]
-FROM OPENROWSET(
-    'Microsoft.ACE.OLEDB.16.0',
-    'Excel 12.0;Database=C:\Importaciones\Datos_socios.xlsx;HDR=YES;IMEX=1',
-    'SELECT * FROM [Grupo Familiar$]'
-);
-
-
-
-
-EXEC sp_MSset_oledb_prop 
-    N'Microsoft.ACE.OLEDB.16.0', 
-    N'AllowInProcess', 1;
-
-EXEC sp_MSset_oledb_prop 
-    N'Microsoft.ACE.OLEDB.16.0', 
-    N'DynamicParameters', 1;
 
