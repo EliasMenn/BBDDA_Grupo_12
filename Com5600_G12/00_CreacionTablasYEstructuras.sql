@@ -256,8 +256,9 @@ BEGIN
 	(
 		Id_Actividad INT IDENTITY (200,1) PRIMARY KEY,
 		Nombre VARCHAR(50),
-		Descr VARCHAR(50),
 		Costo DECIMAL,
+		Descr VARCHAR(50),
+		Vigente_Hasta DATE
 	)
 END
 
@@ -344,18 +345,6 @@ BEGIN
 		Costo DECIMAL,
 	)
 END
-IF NOT EXISTS (SELECT 1 FROM Groups.Categoria WHERE Id_Categoria = 100)
-BEGIN
-    SET IDENTITY_INSERT Groups.Categoria ON;
-    
-    INSERT INTO Groups.Categoria (Id_Categoria, Nombre_Cat, EdadMin, EdadMax, Descr, Costo)
-    VALUES (100, 'GENÉRICA', 0, 99, 'Categoría por defecto', 0);
-
-    SET IDENTITY_INSERT Groups.Categoria OFF;
-END
-
-
-
 
 
 IF OBJECT_ID('Groups.Grupo_Familiar') IS NULL

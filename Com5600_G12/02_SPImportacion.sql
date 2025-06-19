@@ -106,8 +106,8 @@ BEGIN
 
         -- Insertar en Socio
         INSERT INTO Person.Socio (
-    Id_Socio, Id_Persona, Id_Categoria, Id_Tutor, 
-    Telefono_Emergencia, Obra_Social, Nro_Obra_Social
+		Id_Socio, Id_Persona, Id_Categoria, Id_Tutor, 
+		Telefono_Emergencia, Obra_Social, Nro_Obra_Social
 		)
 		SELECT
 			t.NroSocioRP,
@@ -123,10 +123,9 @@ BEGIN
 		WHERE NOT EXISTS (
 			SELECT 1
 			FROM Person.Socio s
-			WHERE 
-				s.Id_Socio COLLATE Latin1_General_CI_AS = t.NroSocioRP COLLATE Latin1_General_CI_AS
-				OR s.Id_Persona = p.Id_Persona
-		);
+			WHERE s.Id_Socio COLLATE Latin1_General_CI_AS = t.NroSocioRP COLLATE Latin1_General_CI_AS
+			OR s.Id_Persona = p.Id_Persona
+			);
         -- Insertar en Tutor
         INSERT INTO Person.Tutor (Id_Persona, Parentesco)
         SELECT DISTINCT
@@ -146,23 +145,7 @@ BEGIN
         PRINT 'Error durante la importación: ' + ERROR_MESSAGE();
     END CATCH
 END;
-
-
-
-
--- Categorias para probar
-INSERT INTO Groups.Categoria (Nombre_Cat, EdadMin, EdadMax, Descr, Costo)
-VALUES 
-    ('Infantil', 0, 12, 'Niños hasta 12 años', 500.00),
-    ('Juvenil', 13, 17, 'Adolescentes hasta 17 años', 700.00),
-    ('Adulto', 18, 64, 'Mayores de edad hasta 64', 1000.00);
-
-SELECT * FROM Person.Persona
-SELECT * FROM Person.Socio
-
 GO
-
-
 
 --Importacion de la hoja 'Grupo Familiar'
 
@@ -309,31 +292,144 @@ BEGIN
     DROP TABLE #TempGrupoFamiliar;
     PRINT 'Importación de grupo familiar exitosa.';
 END;
+GO
+
+CREATE OR ALTER PROCEDURE Activity.Importar_Actividades
+    @RutaArchivo NVARCHAR(256),
+    @NombreHoja NVARCHAR(128),
+    @RangoCeldas NVARCHAR(50) -- Ej: 'A1:C7'
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
+
+        -- Tabla temporal para importar el rango
+        CREATE TABLE #TempActividades (
+            Actividad NVARCHAR(100),
+            ValorPorMes DECIMAL(18,2),
+            Vigente_Hasta DATE
+        );
+
+        -- Importar desde Excel
+        DECLARE @SQL NVARCHAR(MAX);
+        SET @SQL = '
+            INSERT INTO #TempActividades
+            SELECT 
+                [Actividad], 
+                [Valor por mes], 
+                TRY_CONVERT(DATE, [Vigente hasta], 103)
+            FROM OPENROWSET(
+                ''Microsoft.ACE.OLEDB.16.0'',
+                ''Excel 12.0;Database=' + @RutaArchivo + ';HDR=YES;IMEX=1'',
+                ''SELECT * FROM [' + @NombreHoja + '$' + @RangoCeldas + ']'' 
+            );';
+        EXEC sp_executesql @SQL;
 
 
 
 
-DELETE FROM Groups.Grupo_Familiar
-DELETE FROM Groups.Miembro_Familia;
-DELETE FROM Person.Socio;
-DELETE FROM Person.Persona;
-DELETE FROM Person.Tutor;
-select * from Person.Persona
-select * from Person.Socio 
-select * from Person.Tutor
-select * from Groups.Grupo_Familiar
-select * from Groups.Miembro_Familia
+
+        -- Generar EXECs como string dinámico
+        DECLARE @Dinamico NVARCHAR(MAX) = '';
+
+        SELECT @Dinamico += '
+        BEGIN TRY
+            EXEC Activity.Agr_Actividad 
+                @Nombre_Actividad = ''' + REPLACE(TRIM(Actividad), '''', '''''') + ''',
+                @Desc_Act = ''Importado desde Excel'',
+                @Costo = ' + CAST(ValorPorMes AS VARCHAR) + ',
+                @Vigente_Hasta = ''' + CONVERT(VARCHAR, Vigente_Hasta, 23) + ''';
+        END TRY
+        BEGIN CATCH
+            PRINT ''Error al importar: ' + REPLACE(TRIM(Actividad), '''', '''''') + ' => '' + ERROR_MESSAGE();
+        END CATCH;'
+        FROM #TempActividades
+        WHERE Actividad IS NOT NULL AND ValorPorMes IS NOT NULL AND Vigente_Hasta IS NOT NULL;
+
+        -- Ejecutar bloque
+        EXEC sp_executesql @Dinamico;
+
+        -- Limpiar
+        DROP TABLE #TempActividades;
+
+        PRINT 'Importación de actividades completada.';
+    END TRY
+    BEGIN CATCH
+        PRINT 'Error general en la importación: ' + ERROR_MESSAGE();
+    END CATCH
+END
+GO
 
 
---Ejecuciones de SP--
+CREATE OR ALTER PROCEDURE Groups.Importar_Categorias
+    @RutaArchivo NVARCHAR(256),
+    @NombreHoja NVARCHAR(128),
+    @RangoCeldas NVARCHAR(50)  -- Ej: 'B1:D4'
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
 
-EXEC Person.Importar_Responsables_Pago
-    @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\Datos socios.xlsx',
-    @NombreHoja = 'Responsables de Pago$';
+        -- Tabla temporal para importar
+        CREATE TABLE #TempCategorias (
+            NombreCat NVARCHAR(50),
+            ValorCuota DECIMAL(18,2),
+            VigenteHasta DATE
+        );
 
-EXEC ImportarGrupoFamiliar
-    @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\Datos socios.xlsx',
-    @NombreHoja = 'Grupo Familiar$';
+        -- Importar desde Excel
+        DECLARE @SQL NVARCHAR(MAX);
+        SET @SQL = '
+            INSERT INTO #TempCategorias
+            SELECT 
+                [Categoria socio],
+                [Valor cuota],
+                TRY_CONVERT(DATE, [Vigente hasta], 103)
+            FROM OPENROWSET(
+                ''Microsoft.ACE.OLEDB.16.0'',
+                ''Excel 12.0;Database=' + @RutaArchivo + ';HDR=YES;IMEX=1'',
+                ''SELECT * FROM [' + @NombreHoja + '$' + @RangoCeldas + ']'' 
+            );';
+        EXEC sp_executesql @SQL;
 
-	
+        -- Generar ejecución dinámica por categoría
+        DECLARE @Dinamico NVARCHAR(MAX) = '';
+
+        SELECT @Dinamico += '
+        BEGIN TRY
+            EXEC Groups.Agr_Categoria 
+                @Nombre_Cat = ''' + REPLACE(TRIM(NombreCat), '''', '''''') + ''',
+                @Edad_Min = ' + 
+                    CASE 
+                        WHEN NombreCat = 'Mayor' THEN '18'
+                        WHEN NombreCat = 'Cadete' THEN '13'
+                        WHEN NombreCat = 'Menor' THEN '0'
+                        ELSE '0'
+                    END + ',
+                @Edad_Max = ' + 
+                    CASE 
+                        WHEN NombreCat = 'Mayor' THEN '99'
+                        WHEN NombreCat = 'Cadete' THEN '17'
+                        WHEN NombreCat = 'Menor' THEN '12'
+                        ELSE '0'
+                    END + ',
+                @Descr = ''Importado desde Excel'',
+                @Costo = ' + CAST(ValorCuota AS VARCHAR) + ';
+        END TRY
+        BEGIN CATCH
+            PRINT ''Error al importar categoría: ' + REPLACE(TRIM(NombreCat), '''', '''''') + ' => '' + ERROR_MESSAGE();
+        END CATCH;'
+        FROM #TempCategorias
+        WHERE NombreCat IS NOT NULL AND ValorCuota IS NOT NULL;
+
+        EXEC sp_executesql @Dinamico;
+
+        DROP TABLE #TempCategorias;
+        PRINT 'Importación de categorías completada.';
+    END TRY
+    BEGIN CATCH
+        PRINT 'Error general en la importación: ' + ERROR_MESSAGE();
+    END CATCH
+END
+
 
