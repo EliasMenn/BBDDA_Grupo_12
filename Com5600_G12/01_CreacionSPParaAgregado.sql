@@ -919,11 +919,14 @@ BEGIN
 			RAISERROR('.',16,1)
 		END
 
-		IF @Nombre_Actividad = '' OR @Nombre_Actividad LIKE '%[^a-zA-Z]%'
+		IF @Nombre_Actividad IS NULL 
+			OR LTRIM(RTRIM(@Nombre_Actividad)) = ''
+			OR @Nombre_Actividad COLLATE Latin1_General_CI_AI LIKE '%[^a-z ]%'
 		BEGIN
-			PRINT('El nombre de la actividad no es valido.')
-			RAISERROR('El nombre de la actividad no es valido.',16,1)
+			PRINT('El nombre de la actividad no es válido.')
+			RAISERROR('El nombre de la actividad no es válido.', 16, 1)
 		END
+
 
 		IF EXISTS (SELECT 1 FROM Activity.Actividad WHERE Nombre = @Nombre_Actividad)
 		BEGIN
