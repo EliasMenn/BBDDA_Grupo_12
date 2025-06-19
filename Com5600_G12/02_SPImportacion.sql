@@ -141,10 +141,6 @@ VALUES
     ('Juvenil', 13, 17, 'Adolescentes hasta 17 años', 700.00),
     ('Adulto', 18, 64, 'Mayores de edad hasta 64', 1000.00);
 
-EXEC Person.Importar_Responsables_Pago
-    @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\TP_BDDA\BBDDA_Grupo_12\Datos socios.xlsx',
-    @NombreHoja = 'Responsables de Pago$';
-
 SELECT * FROM Person.Persona
 SELECT * FROM Person.Socio
 
@@ -279,9 +275,14 @@ select * from Person.Socio
 select * from Person.Tutor
 select * from Groups.Miembro_Familia
 
-SELECT * FROM Person.Socio WHERE Id_Socio = 'SN-4121';
 
 
+
+--Ejecuciones de SP--
+
+EXEC Person.Importar_Responsables_Pago
+    @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\TP_BDDA\BBDDA_Grupo_12\Datos socios.xlsx',
+    @NombreHoja = 'Responsables de Pago$';
 
 EXEC ImportarGrupoFamiliar
     @RutaArchivo = 'C:\Users\Administrador\Documents\Facultad\BDDA\TP_BDDA\BBDDA_Grupo_12\Datos socios.xlsx',
