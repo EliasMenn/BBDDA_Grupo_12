@@ -302,3 +302,76 @@ BEGIN
         PRINT 'Error general en la importación: ' + ERROR_MESSAGE();
     END CATCH
 END
+GO
+
+CREATE OR ALTER PROCEDURE Groups.Importar_Categorias
+    @RutaArchivo NVARCHAR(256),
+    @NombreHoja NVARCHAR(128),
+    @RangoCeldas NVARCHAR(50)  -- Ej: 'B1:D4'
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
+
+        -- Tabla temporal para importar
+        CREATE TABLE #TempCategorias (
+            NombreCat NVARCHAR(50),
+            ValorCuota DECIMAL(18,2),
+            VigenteHasta DATE
+        );
+
+        -- Importar desde Excel
+        DECLARE @SQL NVARCHAR(MAX);
+        SET @SQL = '
+            INSERT INTO #TempCategorias
+            SELECT 
+                [Categoria socio],
+                [Valor cuota],
+                TRY_CONVERT(DATE, [Vigente hasta], 103)
+            FROM OPENROWSET(
+                ''Microsoft.ACE.OLEDB.16.0'',
+                ''Excel 12.0;Database=' + @RutaArchivo + ';HDR=YES;IMEX=1'',
+                ''SELECT * FROM [' + @NombreHoja + '$' + @RangoCeldas + ']'' 
+            );';
+        EXEC sp_executesql @SQL;
+
+        -- Generar ejecución dinámica por categoría
+        DECLARE @Dinamico NVARCHAR(MAX) = '';
+
+        SELECT @Dinamico += '
+        BEGIN TRY
+            EXEC Groups.Agr_Categoria 
+                @Nombre_Cat = ''' + REPLACE(TRIM(NombreCat), '''', '''''') + ''',
+                @Edad_Min = ' + 
+                    CASE 
+                        WHEN NombreCat = 'Mayor' THEN '18'
+                        WHEN NombreCat = 'Cadete' THEN '13'
+                        WHEN NombreCat = 'Menor' THEN '0'
+                        ELSE '0'
+                    END + ',
+                @Edad_Max = ' + 
+                    CASE 
+                        WHEN NombreCat = 'Mayor' THEN '99'
+                        WHEN NombreCat = 'Cadete' THEN '17'
+                        WHEN NombreCat = 'Menor' THEN '12'
+                        ELSE '0'
+                    END + ',
+                @Descr = ''Importado desde Excel'',
+                @Costo = ' + CAST(ValorCuota AS VARCHAR) + ';
+        END TRY
+        BEGIN CATCH
+            PRINT ''Error al importar categoría: ' + REPLACE(TRIM(NombreCat), '''', '''''') + ' => '' + ERROR_MESSAGE();
+        END CATCH;'
+        FROM #TempCategorias
+        WHERE NombreCat IS NOT NULL AND ValorCuota IS NOT NULL;
+
+        EXEC sp_executesql @Dinamico;
+
+        DROP TABLE #TempCategorias;
+        PRINT 'Importación de categorías completada.';
+    END TRY
+    BEGIN CATCH
+        PRINT 'Error general en la importación: ' + ERROR_MESSAGE();
+    END CATCH
+END
+
