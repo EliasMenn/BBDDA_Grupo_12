@@ -640,7 +640,10 @@ GO
 
 -- Agregar pago
 CREATE OR ALTER PROCEDURE Payment.Agr_Pago
+	@Id_Socio VARCHAR(20),
+	@Id_Pago INT,
     @Id_Factura INT,
+	@Fecha_Pago DATE,
     @Medio_Pago VARCHAR(50),
     @Monto DECIMAL(10,2),
     @Reembolso INT,
@@ -649,32 +652,46 @@ CREATE OR ALTER PROCEDURE Payment.Agr_Pago
 AS
 BEGIN
     BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM Payment.Factura WHERE Id_Factura = @Id_Factura)
-        BEGIN
-            PRINT('La factura no existe')
-            RAISERROR('.',16,1)
-        END
+		IF(@Id_Socio LIKE '[A-Z][A-Z]-[0-9][0-9][0-9][0-9]')
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM Person.Socio WHERE Id_Socio = @Id_Socio)
+				BEGIN
+					PRINT('El responsable de pago no existe')
+					RAISERROR('.',16,1)
+				END
 
-        SET @Medio_Pago = TRIM(@Medio_Pago)
-        IF @Medio_Pago = '' OR LEN(@Medio_Pago) > 50
-        BEGIN
-            PRINT('Medio de pago inválido')
-            RAISERROR('.',16,1)
-        END
+			IF @Id_Factura IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Payment.Factura WHERE Id_Factura = @Id_Factura)
+				BEGIN
+					PRINT('La factura no existe')
+					RAISERROR('.',16,1)
+				END
 
-        IF @Monto <= 0 OR @Cantidad_Pago <= 0
-        BEGIN
-            PRINT('El monto y la cantidad deben ser mayores a 0')
-            RAISERROR('.',16,1)
-        END
+			IF EXISTS (SELECT 1 FROM Payment.Pago)
+				BEGIN 
+					PRINT('El pago ya fue registrado')
+					RAISERROR('.',16,1)
+				END
+			SET @Medio_Pago = TRIM(@Medio_Pago)
+			IF @Medio_Pago = '' OR LEN(@Medio_Pago) > 50
+			BEGIN
+				PRINT('Medio de pago inválido')
+				RAISERROR('.',16,1)
+			END
 
-        INSERT INTO Payment.Pago (
-            Id_Factura, Fecha_Pago, Medio_Pago, Monto,
-            Reembolso, Cantidad_Pago, Pago_Cuenta)
-        VALUES (
-            @Id_Factura, GETDATE(), @Medio_Pago, @Monto,
-            @Reembolso, @Cantidad_Pago, @Pago_Cuenta
-        )
+			IF @Monto <= 0 OR @Cantidad_Pago <= 0
+			BEGIN
+				PRINT('El monto y la cantidad deben ser mayores a 0')
+				RAISERROR('.',16,1)
+			END
+
+			INSERT INTO Payment.Pago (
+				Id_Pago, Id_Factura, Fecha_Pago, Medio_Pago, Responsable, Monto,
+				Reembolso, Cantidad_Pago, Pago_Cuenta)
+			VALUES (
+				@Id_Pago, @Id_Factura, @Fecha_Pago, @Medio_Pago, @Id_Socio, @Monto,
+				@Reembolso, @Cantidad_Pago, @Pago_Cuenta
+			)
+		END
     END TRY
     BEGIN CATCH
         IF ERROR_SEVERITY() > 10

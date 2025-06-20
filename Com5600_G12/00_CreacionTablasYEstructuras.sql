@@ -199,16 +199,19 @@ IF OBJECT_ID('Payment.Pago') IS NULL
 BEGIN
 	CREATE TABLE Payment.Pago
 	(
-		Id_Pago INT IDENTITY (1,1) PRIMARY KEY,
+		Id_Pago INT PRIMARY KEY,
 		Id_Factura INT,
 		Fecha_Pago DATE,
 		Medio_Pago VARCHAR(50),
+		Responsable VARCHAR(20),
 		Monto DECIMAL,
 		Reembolso INT,
 		Cantidad_Pago DECIMAL,
 		Pago_Cuenta INT
 		CONSTRAINT FK_Pago_Factura
-		FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura)
+		FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura),
+		CONSTRAINT FK_Pago_Responsable
+		FOREIGN KEY (Responsable) REFERENCES Person.Socio(Id_Socio)
 	)
 END
 

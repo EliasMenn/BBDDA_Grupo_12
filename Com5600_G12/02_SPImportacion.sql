@@ -542,11 +542,11 @@ BEGIN
 		WHILE EXISTS(SELECT 1 FROM #TempAsistencia)
 		BEGIN
 			SELECT TOP 1
-				@Id_Socio = Id_Socio,
-				@Actividad = Actividad,
+				@Id_Socio = TRIM(Id_Socio),
+				@Actividad = TRIM(Actividad),
 				@Fecha = Fecha,
 				@Asistencia = Asistencia,
-				@Profesor = Profesor
+				@Profesor = TRIM(Profesor)
 			FROM #TempAsistencia
 
 			EXEC Activity.Agr_Asistencia
@@ -564,6 +564,83 @@ BEGIN
 			  AND   @Profesor = Profesor
 		END
 		DROP TABLE #TempAsistencia
+	END TRY
+    BEGIN CATCH
+        RAISERROR('Error en la importacion',16,1)
+    END CATCH
+END
+GO
+
+CREATE OR ALTER PROCEDURE Payment.Importar_Pagos
+    @RutaArchivo NVARCHAR(256),
+    @NombreHoja NVARCHAR(128)
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
+
+        -- Tabla temporal para importar el rango
+        CREATE TABLE #TempPagos (
+			Id_Pago INT,
+			Fecha DATE,
+			Responsable VARCHAR(20),
+			Valor DECIMAL(10,2),
+			Medio VARCHAR(50)
+        );
+
+        -- Importar desde Excel
+        DECLARE @SQL NVARCHAR(MAX);
+        SET @SQL = '
+            INSERT INTO #TempAsistencia
+            SELECT 
+                [Id de pago],  
+                TRY_CONVERT(DATE, [fecha], 103),
+				[Responsable de pago]
+				[Valor]
+				[Medio de pago]
+            FROM OPENROWSET(
+                ''Microsoft.ACE.OLEDB.16.0'',
+                ''Excel 12.0;Database=' + @RutaArchivo + ';HDR=YES;IMEX=1'',
+                ''SELECT * FROM [' + @NombreHoja + ']'' 
+            );';
+		EXEC sp_executesql @SQL
+		
+		DECLARE 
+			@Id_Pago INT,
+			@Fecha DATE,
+			@Responsable VARCHAR(20),
+			@Valor DECIMAL(10,2),
+			@Medio VARCHAR(50)
+
+		WHILE EXISTS(SELECT 1 FROM #TempPagos)
+		BEGIN
+			SELECT TOP 1
+				@Id_Pago = Id_Pago,
+				@Responsable = TRIM(Responsable),
+				@Fecha = Fecha,
+				@Valor = Valor,
+				@Medio = TRIM(Medio)
+			FROM #TempPagos
+
+			EXEC Payment.Agr_Pago
+				@Id_Socio = @Responsable,
+				@Id_Pago = @Id_Pago,
+				@Id_Factura = NULL,
+				@Fecha_Pago = @Fecha,
+				@Medio_Pago = @Medio,
+				@Monto = @Valor,
+				@Reembolso = 0,
+				@Cantidad_Pago = 0,
+				@Pago_Cuenta = 0
+
+			DELETE TOP (1) FROM #TempPagos
+			WHERE @Id_Pago = Id_Pago
+			  AND @Responsable = TRIM(Responsable)
+			  AND @Fecha = Fecha
+			  AND @Valor = Valor
+			  AND @Medio = TRIM(Medio)
+		END
+		DROP TABLE #TempPagos
 	END TRY
     BEGIN CATCH
         RAISERROR('Error en la importacion',16,1)

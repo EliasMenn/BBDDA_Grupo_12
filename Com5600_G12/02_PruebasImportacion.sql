@@ -169,4 +169,10 @@ EXEC Activity.Importar_Asistencia
 
 SELECT * FROM Activity.Asistencia
 
+-- Probamos la importacion de pagos --
 
+EXEC Payment.Importar_Pagos
+    @RutaArchivo = 'C:\Users\Pedro Melissari\Desktop\Archivos BDD\Datos socios.xlsx',
+    @NombreHoja = 'pago cuotas'
+
+SELECT * FROM Payment.Pagos
