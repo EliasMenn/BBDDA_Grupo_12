@@ -323,7 +323,7 @@ BEGIN
 			RAISERROR('.',16,1)
 		END
 
-		IF @Nombre_Rol = '' OR @Nombre_Rol LIKE '%[^a-zA-Z ]%' OR LEN(@Nombre_Rol) > 25
+		IF @Nombre_Rol = '' OR @Nombre_Rol LIKE '%[^a-zA-Z_]%' OR LEN(@Nombre_Rol) > 25
 		BEGIN
 			PRINT('Nombre de rol invalido')
 			RAISERROR('.',16,1)

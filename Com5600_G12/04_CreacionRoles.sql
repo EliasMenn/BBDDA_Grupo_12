@@ -11,6 +11,7 @@ USE master
 
 USE Com5600_G12
 GO
+
 -- Creación de roles de base de datos
 CREATE ROLE Jefe_Tesoreria;
 CREATE ROLE Administrativo_Cobranzas;
@@ -22,68 +23,67 @@ CREATE ROLE Presidente;
 CREATE ROLE Vicepresidente;
 CREATE ROLE Secretario;
 CREATE ROLE Vocales;
-
--- INSERTAR LOS ROLES POSIBLES--
+GO
+-- INSERTAR LOS ROLES POSIBLES CON NOMBRES IDÉNTICOS A LOS ROLES DE BD
 EXEC Person.Agr_Rol 
     @Id_Rol = 1,  
-    @Nombre_Rol = 'Jefe de Tesoreria',         
-    @Descripcion = 'Jefe_Tesoreria';
+    @Nombre_Rol = 'Jefe_Tesoreria',         
+    @Descripcion = 'Rol para jefes de tesorería';
 
 EXEC Person.Agr_Rol 
     @Id_Rol = 2,  
-    @Nombre_Rol = 'Administrativo de Cobranzas', 
-    @Descripcion = 'Administrativo_Cobranzas';
+    @Nombre_Rol = 'Administrativo_Cobranzas', 
+    @Descripcion = 'Rol para administrativos de cobranzas';
 
 EXEC Person.Agr_Rol 
     @Id_Rol = 3,  
-    @Nombre_Rol = 'Administrativo de Morosidad', 
-    @Descripcion = 'Administrativo_Morosidad';
+    @Nombre_Rol = 'Administrativo_Morosidad', 
+    @Descripcion = 'Rol para administrativos de morosidad';
 
 EXEC Person.Agr_Rol 
     @Id_Rol = 4,  
-    @Nombre_Rol = 'Administrativo de Facturacion',
-    @Descripcion = 'Administrativo_Facturacion';
+    @Nombre_Rol = 'Administrativo_Facturacion',
+    @Descripcion = 'Rol para administrativos de facturación';
 
 EXEC Person.Agr_Rol 
     @Id_Rol = 5,  
-    @Nombre_Rol = 'Administrativo de Socio',      
-    @Descripcion = 'Administrativo_Socio';
+    @Nombre_Rol = 'Administrativo_Socio',      
+    @Descripcion = 'Rol para administrativos de socios';
 
 EXEC Person.Agr_Rol 
     @Id_Rol = 6,  
-    @Nombre_Rol = 'Socio Web',                    
-    @Descripcion = 'Socio_Web';
+    @Nombre_Rol = 'Socio_Web',                    
+    @Descripcion = 'Rol para socios con acceso web';
 
 EXEC Person.Agr_Rol 
     @Id_Rol = 7,  
     @Nombre_Rol = 'Presidente',                   
-    @Descripcion = 'Presidente';
+    @Descripcion = 'Rol para presidente';
 
 EXEC Person.Agr_Rol 
     @Id_Rol = 8,  
     @Nombre_Rol = 'Vicepresidente',               
-    @Descripcion = 'Vicepresidente';
+    @Descripcion = 'Rol para vicepresidente';
 
 EXEC Person.Agr_Rol 
     @Id_Rol = 9,  
     @Nombre_Rol = 'Secretario',                   
-    @Descripcion = 'Secretario';
+    @Descripcion = 'Rol para secretario';
 
 EXEC Person.Agr_Rol 
     @Id_Rol = 10, 
     @Nombre_Rol = 'Vocales',                      
-    @Descripcion = 'Vocales';
+    @Descripcion = 'Rol para vocales';
 
---Delete Person.Rol
 
-select * from Person.Rol
 -- Consulta para verificar los roles creados
 /*
-SELECT name AS NombreRol, type_desc AS Tipo
-FROM sys.database_principals
-WHERE type = 'R' AND name LIKE 'Rol_%'
+SELECT name AS Nombre_Rol 
+FROM sys.database_principals 
+WHERE type = 'R' 
 ORDER BY name;
-*/s
+*/
+
 
 -------------------------------------------------- PARA ROL DE JEFE DE TESORERIA --------------------------------------------------
 -- Permisos sobre esquema Payment (puede ver, insertar, eliminar y modoficar, pero no alterar la tabla)
@@ -223,7 +223,7 @@ GRANT SELECT ON SCHEMA::Activity TO Vocales;
 
 ------En Caso dde Borrar los roles--------------
 /*
-DROP ROLE Jefe_Tesoreria;
+DROP ROLE Jefe_Tesoreria
 DROP ROLE Administrativo_Cobranzas;
 DROP ROLE Administrativo_Morosidad;
 DROP ROLE Administrativo_Facturacion;
