@@ -329,10 +329,10 @@ BEGIN
 			RAISERROR('.',16,1)
 		END
 
-		IF @Descripcion = '' OR @Descripcion LIKE '%[^a-zA-Z ]%' OR LEN(@Descripcion) > 25
+		IF @Descripcion = '' OR @Descripcion LIKE '%[^a-zA-Z _]%' OR LEN(@Descripcion) > 50
 		BEGIN
-			PRINT('Descripcion invalida')
-			RAISERROR('.',16,1)
+			PRINT('Descripción inválida');
+			RAISERROR('.', 16, 1)
 		END
 
 	END TRY
@@ -360,6 +360,10 @@ BEGIN
 	BEGIN TRY
 		DECLARE @ContraseniaHash VARBINARY(32)
 		DECLARE @Vigencia DATE
+
+		DECLARE @Descripcion_Rol NVARCHAR(50);
+		DECLARE @sql NVARCHAR(75);--deberian poder entrar cualquier sentencia
+
 		IF TRY_CONVERT(INT, @Id_Rol) IS NULL
 		BEGIN 
 			PRINT('El ID ingresado no es valido')
@@ -404,6 +408,19 @@ BEGIN
 		END 
 		SET @Vigencia = DATEADD(YEAR,1,GETDATE())
 		SET @ContraseniaHash = HASHBYTES('SHA2_256', CONVERT(NVARCHAR(100), @Contrasenia))
+
+		--
+	SELECT @Descripcion_Rol = Desc_Rol FROM Person.Rol
+	WHERE @Id_Rol = Id_Rol
+	-- Crear usuario dinámicamente
+	SET @sql = N'CREATE USER ' + QUOTENAME(@Nombre_Usuario) + N' WITHOUT LOGIN';
+    EXEC sp_executesql @sql;
+
+	-- Agregar al rol dinámicamente
+	SET @sql = N'ALTER ROLE ' + QUOTENAME(@Descripcion_Rol) + N' ADD MEMBER ' + QUOTENAME(@Nombre_Usuario);
+    EXEC sp_executesql @sql;
+
+
 	END TRY
 	BEGIN CATCH
 		IF ERROR_SEVERITY() > 10

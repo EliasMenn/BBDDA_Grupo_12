@@ -12,61 +12,71 @@ USE master
 USE Com5600_G12
 GO
 -- Creación de roles de base de datos
-CREATE ROLE Rol_Jefe_Tesoreria;
-CREATE ROLE Rol_Administrativo_Cobranzas;
-CREATE ROLE Rol_Administrativo_Morosidad;
-CREATE ROLE Rol_Administrativo_Facturacion;
-CREATE ROLE Rol_Administrativo_Socio;
-CREATE ROLE Rol_Socio_Web;
-CREATE ROLE Rol_Presidente;
-CREATE ROLE Rol_Vicepresidente;
-CREATE ROLE Rol_Secretario;
-CREATE ROLE Rol_Vocales;
-GO
+CREATE ROLE Jefe_Tesoreria;
+CREATE ROLE Administrativo_Cobranzas;
+CREATE ROLE Administrativo_Morosidad;
+CREATE ROLE Administrativo_Facturacion;
+CREATE ROLE Administrativo_Socio;
+CREATE ROLE Socio_Web;
+CREATE ROLE Presidente;
+CREATE ROLE Vicepresidente;
+CREATE ROLE Secretario;
+CREATE ROLE Vocales;
 
--- INSERTAR LOS ROLES POSIBLES
-EXEC Person.Agr_Rol @Id_Rol = 1,  
-@Nombre_Rol = 'Jefe de Tesoreria',         
-@Descripcion = 'Rol de Jefe de Tesorería';
+-- INSERTAR LOS ROLES POSIBLES-- INSERTAR LOS ROLES POSIBLES CON NOMBRES DESCRIPTIVOS
+EXEC Person.Agr_Rol 
+    @Id_Rol = 1,  
+    @Nombre_Rol = 'Jefe de Tesoreria',         
+    @Descripcion = 'Jefe_Tesoreria';
 
-EXEC Person.Agr_Rol @Id_Rol = 2,  
-@Nombre_Rol = 'Administrativo de Cobranzas', 
-@Descripcion = 'Rol de Administrativo de Cobranza';
+EXEC Person.Agr_Rol 
+    @Id_Rol = 2,  
+    @Nombre_Rol = 'Administrativo de Cobranzas', 
+    @Descripcion = 'Administrativo_Cobranzas';
 
-EXEC Person.Agr_Rol @Id_Rol = 3,  
-@Nombre_Rol = 'Administrativo de Morosidad', 
-@Descripcion = 'Rol de Administrativo de Morosidad';
+EXEC Person.Agr_Rol 
+    @Id_Rol = 3,  
+    @Nombre_Rol = 'Administrativo de Morosidad', 
+    @Descripcion = 'Administrativo_Morosidad';
 
-EXEC Person.Agr_Rol @Id_Rol = 4,  
-@Nombre_Rol = 'Administrativo de Facturacion',
-@Descripcion = 'Rol de Administrativo de Facturación';
+EXEC Person.Agr_Rol 
+    @Id_Rol = 4,  
+    @Nombre_Rol = 'Administrativo de Facturacion',
+    @Descripcion = 'Administrativo_Facturacion';
 
-EXEC Person.Agr_Rol @Id_Rol = 5,  
-@Nombre_Rol = 'Administrativo de Socio',      
-@Descripcion = 'Rol de Administrativo Socio';
+EXEC Person.Agr_Rol 
+    @Id_Rol = 5,  
+    @Nombre_Rol = 'Administrativo de Socio',      
+    @Descripcion = 'Administrativo_Socio';
 
-EXEC Person.Agr_Rol @Id_Rol = 6,  
-@Nombre_Rol = 'Socio Web',                    
-@Descripcion = 'Rol de Socios web';
+EXEC Person.Agr_Rol 
+    @Id_Rol = 6,  
+    @Nombre_Rol = 'Socio Web',                    
+    @Descripcion = 'Socio_Web';
 
-EXEC Person.Agr_Rol @Id_Rol = 7,  
-@Nombre_Rol = 'Presidente',                   
-@Descripcion = 'Rol de Presidente';
+EXEC Person.Agr_Rol 
+    @Id_Rol = 7,  
+    @Nombre_Rol = 'Presidente',                   
+    @Descripcion = 'Presidente';
 
-EXEC Person.Agr_Rol @Id_Rol = 8,  
-@Nombre_Rol = 'Vicepresidente',               
-@Descripcion = 'Rol de Vicepresidente';
+EXEC Person.Agr_Rol 
+    @Id_Rol = 8,  
+    @Nombre_Rol = 'Vicepresidente',               
+    @Descripcion = 'Vicepresidente';
 
-EXEC Person.Agr_Rol @Id_Rol = 9,  
-@Nombre_Rol = 'Secretario',                   
-@Descripcion = 'Rol de Secretario';
+EXEC Person.Agr_Rol 
+    @Id_Rol = 9,  
+    @Nombre_Rol = 'Secretario',                   
+    @Descripcion = 'Secretario';
 
-EXEC Person.Agr_Rol @Id_Rol = 10, 
-@Nombre_Rol = 'Vocales',                      
-@Descripcion = 'Rol de Vocales';
+EXEC Person.Agr_Rol 
+    @Id_Rol = 10, 
+    @Nombre_Rol = 'Vocales',                      
+    @Descripcion = 'Vocales';
 
+--Delete Person.Rol
 
-
+select * from Person.Rol
 -- Consulta para verificar los roles creados
 SELECT name AS NombreRol, type_desc AS Tipo
 FROM sys.database_principals
@@ -212,46 +222,6 @@ GRANT SELECT ON SCHEMA::Jornada TO Rol_Secretario;
 -- Permisos mínimos de consulta (solo debe saber de las actividades )
 GRANT SELECT ON SCHEMA::Activity TO Rol_Vocales;
 -----------------------------------------------------------------------------------------------------------------------------------
-
-------PARA VER PERMISOS ASIGNADOS---- (es para revisar si se guardaron bien, lo dejamos por si las dudas)
-/*
-SELECT 
-    r.name AS Rol,
-    p.permission_name AS Permiso,
-    p.state_desc AS Estado,
-    SCHEMA_NAME(o.schema_id) + '.' + OBJECT_NAME(p.major_id) AS Objeto
-FROM sys.database_permissions p
-JOIN sys.database_principals r ON p.grantee_principal_id = r.principal_id
-LEFT JOIN sys.objects o ON p.major_id = o.object_id
-WHERE r.type = 'R' AND r.name LIKE 'Rol_%'
-ORDER BY r.name, p.permission_name;
-*/
-
-----------------------------------------------------------------------------------
--------------CREACION DE USUARIOS-------------------------------------------------
-
-CREATE USER JefedeTesoreria WITHOUT LOGIN;
-CREATE USER AdminCobranzas WITHOUT LOGIN;
-CREATE USER AdminMorosidad WITHOUT LOGIN;
-CREATE USER AdminFacturacion WITHOUT LOGIN;
-CREATE USER AdminSocios WITHOUT LOGIN;
-CREATE USER SocioWeb WITHOUT LOGIN;
-CREATE USER Presidente WITHOUT LOGIN;
-CREATE USER Vicepresidente WITHOUT LOGIN;
-CREATE USER Secretario WITHOUT LOGIN;
-CREATE USER Vocales WITHOUT LOGIN;
-
-------------ASIGNAR ROLES A USUARIOS------------
-ALTER ROLE Rol_Jefe_Tesoreria ADD MEMBER JefedeTesoreria;
-ALTER ROLE Rol_Administrativo_Cobranzas ADD MEMBER AdminCobranzas;
-ALTER ROLE Rol_Administrativo_Morosidad ADD MEMBER AdminMorosidad;
-ALTER ROLE Rol_Administrativo_Facturacion ADD MEMBER AdminFacturacion;
-ALTER ROLE Rol_Administrativo_Socio ADD MEMBER AdminSocios;
-ALTER ROLE Rol_Socio_Web ADD MEMBER SocioWeb;
-ALTER ROLE Rol_Presidente ADD MEMBER Presidente;
-ALTER ROLE Rol_Vicepresidente ADD MEMBER Vicepresidente;
-ALTER ROLE Rol_Secretario ADD MEMBER Secretario;
-ALTER ROLE Rol_Vocales ADD MEMBER Vocales;
 
 ------En Caso dde Borrar los roles--------------
 /*
