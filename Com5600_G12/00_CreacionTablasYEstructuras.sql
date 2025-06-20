@@ -104,7 +104,6 @@ BEGIN
 		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona),
 		CONSTRAINT FK_Socio_Tutor
 		FOREIGN KEY (Id_Tutor) REFERENCES Person.Tutor(Id_Tutor)
-
 	);
 END
 
@@ -199,19 +198,17 @@ IF OBJECT_ID('Payment.Pago') IS NULL
 BEGIN
 	CREATE TABLE Payment.Pago
 	(
-		Id_Pago INT PRIMARY KEY,
-		Id_Factura INT,
+		Id_Pago BIGINT PRIMARY KEY,
 		Fecha_Pago DATE,
+		Responsable_Original VARCHAR(20),		-- Acá va el Id_Socio, exista o no
+		Responsable_Valido VARCHAR(20) NULL,    -- FK real, NULL si no existe
 		Medio_Pago VARCHAR(50),
-		Responsable VARCHAR(20),
-		Monto DECIMAL,
+		Monto DECIMAL(18,2),
 		Reembolso INT,
-		Cantidad_Pago DECIMAL,
-		Pago_Cuenta INT
-		CONSTRAINT FK_Pago_Factura
-		FOREIGN KEY (Id_Factura) REFERENCES Payment.Factura(Id_Factura),
-		CONSTRAINT FK_Pago_Responsable
-		FOREIGN KEY (Responsable) REFERENCES Person.Socio(Id_Socio)
+		Cantidad_Pago DECIMAL(18,2),
+		Pago_Cuenta INT,
+		CONSTRAINT FK_Pago_Importado_Socio FOREIGN KEY (Responsable_Valido)
+			REFERENCES Person.Socio(Id_Socio)
 	)
 END
 
