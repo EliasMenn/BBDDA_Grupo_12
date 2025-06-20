@@ -24,6 +24,49 @@ CREATE ROLE Rol_Secretario;
 CREATE ROLE Rol_Vocales;
 GO
 
+-- INSERTAR LOS ROLES POSIBLES
+EXEC Person.Agr_Rol @Id_Rol = 1,  
+@Nombre_Rol = 'Jefe de Tesoreria',         
+@Descripcion = 'Rol de Jefe de Tesorería';
+
+EXEC Person.Agr_Rol @Id_Rol = 2,  
+@Nombre_Rol = 'Administrativo de Cobranzas', 
+@Descripcion = 'Rol de Administrativo de Cobranza';
+
+EXEC Person.Agr_Rol @Id_Rol = 3,  
+@Nombre_Rol = 'Administrativo de Morosidad', 
+@Descripcion = 'Rol de Administrativo de Morosidad';
+
+EXEC Person.Agr_Rol @Id_Rol = 4,  
+@Nombre_Rol = 'Administrativo de Facturacion',
+@Descripcion = 'Rol de Administrativo de Facturación';
+
+EXEC Person.Agr_Rol @Id_Rol = 5,  
+@Nombre_Rol = 'Administrativo de Socio',      
+@Descripcion = 'Rol de Administrativo Socio';
+
+EXEC Person.Agr_Rol @Id_Rol = 6,  
+@Nombre_Rol = 'Socio Web',                    
+@Descripcion = 'Rol de Socios web';
+
+EXEC Person.Agr_Rol @Id_Rol = 7,  
+@Nombre_Rol = 'Presidente',                   
+@Descripcion = 'Rol de Presidente';
+
+EXEC Person.Agr_Rol @Id_Rol = 8,  
+@Nombre_Rol = 'Vicepresidente',               
+@Descripcion = 'Rol de Vicepresidente';
+
+EXEC Person.Agr_Rol @Id_Rol = 9,  
+@Nombre_Rol = 'Secretario',                   
+@Descripcion = 'Rol de Secretario';
+
+EXEC Person.Agr_Rol @Id_Rol = 10, 
+@Nombre_Rol = 'Vocales',                      
+@Descripcion = 'Rol de Vocales';
+
+
+
 -- Consulta para verificar los roles creados
 SELECT name AS NombreRol, type_desc AS Tipo
 FROM sys.database_principals
@@ -126,7 +169,7 @@ GRANT SELECT ON Groups.Categoria TO Rol_Administrativo_Socio;
 --No deberia poder hacer nada en realidad, osea no es un empleado, es un socio, solo deberia ver su cuenta
 GRANT SELECT ON Payment.ver_Cuenta TO Rol_Socio_Web; --le asignamos una vista
 
---SP para poder ver su tabla dependiendo de su Login #a testear
+--SP para poder ver su tabla dependiendo de su Login a testear
 CREATE OR ALTER PROCEDURE Payment.ver_Cuenta
 	@Login NVARCHAR(100)
 AS

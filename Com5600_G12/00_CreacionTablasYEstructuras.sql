@@ -113,7 +113,7 @@ BEGIN
 	CREATE TABLE Person.Rol
 	(	
 		Id_Rol Integer PRIMARY KEY,
-		Nombre_Rol VARCHAR(25),
+		Nombre_Rol VARCHAR(30),
 		Desc_Rol VARCHAR(50)
 	)
 END

@@ -335,7 +335,7 @@ GO
 ---------------------------------------- Para Tabla Rol ----------------------------------------
 CREATE OR ALTER PROCEDURE Person.Modificar_Rol
 	@Id_Rol INT,
-	@Nombre_Rol VARCHAR(25) = NULL,
+	@Nombre_Rol VARCHAR(30) = NULL,
 	@Descripcion VARCHAR(50) = NULL
 AS
 BEGIN
@@ -361,7 +361,7 @@ BEGIN
 		BEGIN
 			SET @Nombre_Rol = TRIM(@Nombre_Rol);
 
-			IF @Nombre_Rol LIKE '%[^a-zA-Z ]%' OR LEN(@Nombre_Rol) > 25
+			IF @Nombre_Rol LIKE '%[^a-zA-Z ]%' OR LEN(@Nombre_Rol) > 30
 			BEGIN
 				PRINT('Nombre de rol inválido');
 				RAISERROR('.', 16, 1);
@@ -387,7 +387,7 @@ BEGIN
 		BEGIN
 			SET @Descripcion = TRIM(@Descripcion);
 
-			IF @Descripcion LIKE '%[^a-zA-Z ]%' OR LEN(@Descripcion) > 25
+			IF @Descripcion LIKE '%[^a-zA-Z ]%' OR LEN(@Descripcion) > 50
 			BEGIN
 				PRINT('Descripción inválida');
 				RAISERROR('.', 16, 1);
