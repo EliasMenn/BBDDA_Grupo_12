@@ -235,6 +235,7 @@ BEGIN
 END
 GO
 
+
 -- Para Tabla tutor --
 
 CREATE OR ALTER PROCEDURE Person.Agr_Tutor
@@ -348,6 +349,26 @@ BEGIN
 END
 GO
 
+-----------------------------------------------------
+DECLARE @IdPersona2 INT;
+
+EXEC @IdPersona2 = Person.Agr_Persona
+    @Nombre = 'Carlos',
+    @Apellido = 'Martínez',
+    @DNI = '33445566',
+    @Email = 'carlos.martinez@email.com',
+    @Fecha_Nacimiento = '1988-07-15',
+    @Telefono_Contacto = '1167890123';
+
+EXEC Person.Agr_Usuario
+    @Id_Rol = 2,                     -- Rol diferente de 6 para que encripte
+    @Id_Persona = @IdPersona2,
+    @Nombre_Usuario = 'carlos.martinez',
+    @Contrasenia = 'Password123';    -- Cumple requisitos (mayúscula, minúscula, número)
+GO
+select * from Person.Usuario
+
+select * from Person.Persona
 -- Para Tabla Usuario --
 
 CREATE OR ALTER PROCEDURE Person.Agr_Usuario
@@ -360,6 +381,38 @@ BEGIN
 	BEGIN TRY
 		DECLARE @ContraseniaHash VARBINARY(32)
 		DECLARE @Vigencia DATE
+		DECLARE @Clave VARCHAR(30)='contraseña1';
+		DECLARE @Nombre_Usuario_Cifrado VARBINARY(256);
+
+		DECLARE @DNI VARCHAR(10)
+		DECLARE @Telefono VARCHAR(15)
+		DECLARE @Email VARCHAR(50)
+		DECLARE @Nombre VARCHAR(25)
+		DECLARE @Apellido VARCHAR(25)
+
+		DECLARE @Nombre_Encriptado VARBINARY(256);
+		DECLARE @Apellido_Encriptado VARBINARY(256);
+		DECLARE @DNI_Encriptado VARBINARY(256);
+		DECLARE @Telefono_Encriptado VARBINARY(256);
+		DECLARE @Email_Encriptado VARBINARY(256);
+
+
+		SELECT 
+			@DNI = DNI,
+			@Telefono = Telefono_Contacto,
+			@Email = Email,
+			@Nombre = Nombre,
+			@Apellido = Apellido
+		FROM Person.Persona
+		WHERE Id_Persona = @Id_Persona;
+		
+		IF @DNI IS NULL
+		BEGIN
+			RAISERROR('No se encontró la persona con ID %d', 16, 1, @Id_Persona);
+			RETURN;
+		END
+    
+ 
 
 		DECLARE @Descripcion_Rol NVARCHAR(50);
 		DECLARE @sql NVARCHAR(75);--deberian poder entrar cualquier sentencia
@@ -409,7 +462,17 @@ BEGIN
 		SET @Vigencia = DATEADD(YEAR,1,GETDATE())
 		SET @ContraseniaHash = HASHBYTES('SHA2_256', CONVERT(NVARCHAR(100), @Contrasenia))
 
-		
+		SET @Nombre_Usuario_Cifrado = ENCRYPTBYPASSPHRASE(@Clave, @Nombre_Usuario)
+		    
+		SET @DNI_Encriptado = ENCRYPTBYPASSPHRASE(@Clave, @DNI)
+		SET @Telefono_Encriptado = ENCRYPTBYPASSPHRASE(@Clave, @Telefono)
+		SET @Email_Encriptado = ENCRYPTBYPASSPHRASE(@Clave, @Email)
+		SET @Nombre_Encriptado = ENCRYPTBYPASSPHRASE(@Clave, @Nombre)
+		SET @Apellido = ENCRYPTBYPASSPHRASE(@Clave, @Apellido_Encriptado)
+    
+		INSERT INTO Person.Persona (Telefono_Contacto_Cifrado, Email_Cifrado,Nombre_Cifrado,Apellido_Cifrado,DNI_Cifrado)
+		VALUES (@Telefono_Encriptado, @Email_Encriptado, @Nombre_Encriptado,@Nombre_Encriptado,@DNI_Encriptado)
+	
 	SELECT @Descripcion_Rol = Desc_Rol FROM Person.Rol
 	WHERE @Id_Rol = Id_Rol
 
@@ -426,8 +489,9 @@ BEGIN
 			RETURN;
 		END
 	END CATCH
-	INSERT INTO Person.Usuario (Id_Rol, Id_Persona,Nombre_Usuario,Contrasenia,Vigencia_Contrasenia)
-	VALUES (@Id_Rol, @Id_Persona, @Nombre_Usuario, @ContraseniaHash, @Vigencia)
+	INSERT INTO Person.Usuario (Id_Rol, Id_Persona,Nombre_Usuario,Nombre_Usuario_Cifrado,Contrasenia,Vigencia_Contrasenia)
+	VALUES (@Id_Rol, @Id_Persona, @Nombre_Usuario, @Nombre_Usuario_Cifrado,@ContraseniaHash, @Vigencia)
+
 END
 GO
 

@@ -73,7 +73,13 @@ BEGIN
 		DNI VARCHAR(15),
 		Email VARCHAR(50),
 		Fecha_Nacimiento DATE,
-		Telefono_Contacto VARCHAR(15)
+		Telefono_Contacto VARCHAR(15),
+
+		Telefono_Contacto_Cifrado VARBINARY(256),
+		Email_Cifrado VARBINARY(256),
+		Nombre_Cifrado VARBINARY(256),
+		Apellido_Cifrado VARBINARY(256),
+		DNI_Cifrado VARBINARY(256)
 	);
 END
 
@@ -125,6 +131,7 @@ BEGIN
 		Id_Rol INT NOT NULL,
 		Id_Persona INT PRIMARY KEY,
 		Nombre_Usuario VARCHAR(30),
+		Nombre_Usuario_Cifrado VARBINARY(256),
 		Contrasenia VARBINARY(32),
 		Vigencia_Contrasenia DATE,
 		CONSTRAINT FK_Usuario_Rol

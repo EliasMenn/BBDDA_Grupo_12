@@ -75,6 +75,7 @@ EXEC Person.Agr_Rol
     @Nombre_Rol = 'Vocales',                      
     @Descripcion = 'Rol para vocales';
 
+select * from Person.Rol
 
 -- Consulta para verificar los roles creados
 /*
@@ -179,17 +180,17 @@ GRANT SELECT ON Groups.Categoria TO Administrativo_Socio;
 
 ------------------------------------------------PARA ROL DE SOCIO WEB------------------------------------------------
 --No deberia poder hacer nada en realidad, osea no es un empleado, es un socio, solo deberia ver su cuenta
-CREATE OR ALTER VIEW Payment.verCuenta
-AS
-SELECT
-    c.Id_Persona,
-    c.SaldoCuenta,
-    u.Nombre_Usuario
-FROM Payment.Cuenta c
-JOIN Person.Usuario u ON c.Id_Persona = u.Id_Persona;
-GO
+	CREATE OR ALTER VIEW Payment.verCuenta
+	AS
+	SELECT
+		c.Id_Persona,
+		c.SaldoCuenta,
+		u.Nombre_Usuario
+	FROM Payment.Cuenta c
+	JOIN Person.Usuario u ON c.Id_Persona = u.Id_Persona;
+	GO
 
-GRANT SELECT ON Payment.verCuenta TO Socio_Web;
+	GRANT SELECT ON Payment.verCuenta TO Socio_Web;
 /*ESE SOCIO WEB PODRA VER SU CUENTA YA QUE LE DAMOS EL PERMISO DE USAR ESTE SP
 Y NADA MAS */
 
