@@ -149,7 +149,6 @@ BEGIN
 		Estado_Factura Varchar(10)
 		CONSTRAINT FK_Factura_Persona
 		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona)
-
 	)
 END 
 

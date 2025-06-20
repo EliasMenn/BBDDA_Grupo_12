@@ -149,7 +149,7 @@ GO
 
 --Importacion de la hoja 'Grupo Familiar'
 
-CREATE OR ALTER PROCEDURE ImportarGrupoFamiliar
+CREATE OR ALTER PROCEDURE Groups.ImportarGrupoFamiliar
     @RutaArchivo NVARCHAR(256),
     @NombreHoja NVARCHAR(256)  -- Ejemplo: 'Grupo Familiar$'
 AS
@@ -324,10 +324,6 @@ BEGIN
                 ''SELECT * FROM [' + @NombreHoja + '$' + @RangoCeldas + ']'' 
             );';
         EXEC sp_executesql @SQL;
-
-
-
-
 
         -- Generar EXECs como string dinámico
         DECLARE @Dinamico NVARCHAR(MAX) = '';
