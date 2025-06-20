@@ -40,13 +40,13 @@ EXEC Person.Importar_Responsables_Pago
 	@RutaArchivo = 'C:\Users\Pedro Melissari\Desktop\Archivos BDD\Datos socios.xlsx',
 	@NombreHoja = 'Responsables de Pago$'
 
-DELETE FROM Person.Persona
-DELETE FROM Person.Socio
-DELETE FROM Person.Tutor
-
 SELECT * FROM Person.Persona
 SELECT * FROM Person.Socio
 SELECT * FROM Person.Tutor
+
+DELETE FROM Person.Socio
+DELETE FROM Person.Tutor
+DELETE FROM Person.Persona
 
 ---------------------------------------------------------------------------------------
 ------------------------------------ GRUPO FAMILIAR -----------------------------------

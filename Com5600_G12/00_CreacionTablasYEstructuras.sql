@@ -10,7 +10,7 @@
 ------------------ CREACIÓN DE BBDD -------------------
 
 -- Cambiar al contexto master
-/* USE master;
+/*USE master;
 GO
 
 -- Forzar modo SINGLE_USER y cerrar todas las conexiones
