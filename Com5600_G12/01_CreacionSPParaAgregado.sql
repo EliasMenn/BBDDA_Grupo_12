@@ -702,47 +702,74 @@ BEGIN
 END
 GO
 
--- Agregar pago
 CREATE OR ALTER PROCEDURE Payment.Agr_Pago
+	@Id_Socio VARCHAR(20),
+	@Id_Pago BIGINT,
     @Id_Factura INT,
+	@Fecha_Pago DATE,
     @Medio_Pago VARCHAR(50),
-    @Monto DECIMAL(10,2),
+    @Monto DECIMAL(18,2),
     @Reembolso INT,
-    @Cantidad_Pago DECIMAL(10,2),
+    @Cantidad_Pago DECIMAL(18,2),
     @Pago_Cuenta INT
 AS
 BEGIN
     BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM Payment.Factura WHERE Id_Factura = @Id_Factura)
+        -- Validar formato de Id_Socio (opcional)
+        IF(@Id_Socio LIKE '[A-Z][A-Z]-[0-9][0-9][0-9][0-9]')
         BEGIN
-            PRINT('La factura no existe')
-            RAISERROR('.',16,1)
-        END
+            -- Validación de factura
+            IF @Id_Factura IS NOT NULL AND NOT EXISTS (
+                SELECT 1 FROM Payment.Factura WHERE Id_Factura = @Id_Factura
+            )
+            BEGIN
+                PRINT('La factura no existe');
+                RAISERROR('.', 16, 1);
+            END
 
-        SET @Medio_Pago = TRIM(@Medio_Pago)
-        IF @Medio_Pago = '' OR LEN(@Medio_Pago) > 50
-        BEGIN
-            PRINT('Medio de pago inválido')
-            RAISERROR('.',16,1)
-        END
+            -- Validar que el pago no exista
+            IF EXISTS (SELECT 1 FROM Payment.Pago WHERE Id_Pago = @Id_Pago)
+            BEGIN
+                PRINT('El pago ya fue registrado');
+                RAISERROR('.', 16, 1);
+            END
 
-        IF @Monto <= 0 OR @Cantidad_Pago <= 0
-        BEGIN
-            PRINT('El monto y la cantidad deben ser mayores a 0')
-            RAISERROR('.',16,1)
-        END
+            -- Validación del medio de pago
+            SET @Medio_Pago = TRIM(@Medio_Pago);
+            IF @Medio_Pago = '' OR LEN(@Medio_Pago) > 50
+            BEGIN
+                PRINT('Medio de pago inválido');
+                RAISERROR('.', 16, 1);
+            END
 
-        INSERT INTO Payment.Pago (
-            Id_Factura, Fecha_Pago, Medio_Pago, Monto,
-            Reembolso, Cantidad_Pago, Pago_Cuenta)
-        VALUES (
-            @Id_Factura, GETDATE(), @Medio_Pago, @Monto,
-            @Reembolso, @Cantidad_Pago, @Pago_Cuenta
-        )
+            -- Validación del monto y cantidad
+            IF @Monto <= 0 OR @Cantidad_Pago <= 0
+            BEGIN
+                PRINT('El monto y la cantidad deben ser mayores a 0');
+                RAISERROR('.', 16, 1);
+            END
+
+            -- Determinar si el socio existe
+            DECLARE @Responsable_Valido VARCHAR(20) = NULL;
+            IF EXISTS (SELECT 1 FROM Person.Socio WHERE Id_Socio = @Id_Socio)
+            BEGIN
+                SET @Responsable_Valido = @Id_Socio;
+            END
+
+            -- Insertar el pago (registrando el original y el válido si corresponde)
+            INSERT INTO Payment.Pago (
+                Id_Pago, Fecha_Pago, Responsable_Original, Responsable_Valido,
+                Medio_Pago, Monto, Reembolso, Cantidad_Pago, Pago_Cuenta
+            )
+            VALUES (
+                @Id_Pago, @Fecha_Pago, @Id_Socio, @Responsable_Valido,
+                @Medio_Pago, @Monto, @Reembolso, @Cantidad_Pago, @Pago_Cuenta
+            );
+        END
     END TRY
     BEGIN CATCH
         IF ERROR_SEVERITY() > 10
-            RAISERROR('Error al registrar el pago', 16, 1)
+            RAISERROR('Error al registrar el pago', 16, 1);
     END CATCH
 END
 GO
@@ -1423,23 +1450,29 @@ AS
 BEGIN
 	BEGIN TRY
 
-		IF NOT EXISTS (SELECT 1 FROM Person.Socio WHERE Id_Socio = Id_Socio)
+		IF NOT EXISTS (SELECT 1 FROM Person.Socio WHERE Id_Socio = @Id_Socio)
 		BEGIN
-			PRINT('La persona que asistio no es socio')
-			RAISERROR('La persona que asistio no es socio',16,1)
+			PRINT('La persona que asistió no es socio')
+			RAISERROR('La persona que asistió no es socio',16,1)
 		END
 
-		IF NOT EXISTS (SELECT 1 FROM Activity.Actividad WHERE Nombre = @Actividad)
+		IF NOT EXISTS (
+			SELECT 1 
+			FROM Activity.Actividad 
+			WHERE LTRIM(RTRIM(Nombre)) COLLATE Latin1_General_CI_AI 
+				= LTRIM(RTRIM(@Actividad)) COLLATE Latin1_General_CI_AI
+		)
 		BEGIN
 			PRINT('No existe esa actividad')
 			RAISERROR('No existe esa actividad',16,1)
 		END
 
-		IF @Actividad LIKE '%[^a-zA-Z]%'
+		IF @Actividad COLLATE Latin1_General_BIN LIKE '%[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]%'
 		BEGIN
-			PRINT('El nombre de actividad no es valido')
-			RAISERROR('El nombre de actividad no es valido',16,1)
+			PRINT('El nombre de actividad no es válido')
+			RAISERROR('El nombre de actividad no es válido',16,1)
 		END
+
 
 		IF @Fecha > CAST(GETDATE() AS DATE)
 		BEGIN
@@ -1449,14 +1482,14 @@ BEGIN
 
 		IF UPPER(@Asistencia) NOT IN ('A','P','J')
 		BEGIN
-			PRINT('La asistencia no es valida')
-			RAISERROR('La asistencia no es valida',16,1)
+			PRINT('La asistencia no es válida')
+			RAISERROR('La asistencia no es válida',16,1)
 		END
 
-		IF @Profesor LIKE '%[^a-zA-Z ]%'
+		IF @Profesor LIKE '%[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]%'
 		BEGIN
-			PRINT('El nombre del profesor no es valido')
-			RAISERROR('El nombre del profesor no es valido',16,1)
+			PRINT('El nombre del profesor no es válido')
+			RAISERROR('El nombre del profesor no es válido',16,1)
 		END
 		
 		IF 
@@ -1472,7 +1505,7 @@ BEGIN
 	BEGIN CATCH
 		IF ERROR_SEVERITY() > 10
 		BEGIN
-			RAISERROR('Ocurrio Algo en el agregado de la asistencia',16,1)
+			RAISERROR('Ocurrió algo en el agregado de la asistencia',16,1)
 			RETURN;
 		END
 	END CATCH

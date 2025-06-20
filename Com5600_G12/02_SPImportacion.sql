@@ -498,3 +498,187 @@ BEGIN
 END
 GO
 
+CREATE OR ALTER PROCEDURE Activity.Importar_Asistencia
+    @RutaArchivo NVARCHAR(256),
+    @NombreHoja NVARCHAR(128)  -- Ej: 'presentismo_actividades$'
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
+
+        CREATE TABLE #TempAsistencia (
+            Id_Socio VARCHAR(20),
+            Actividad VARCHAR(20),
+            Fecha DATE,
+            Asistencia CHAR(1),
+            Profesor VARCHAR(50)
+        );
+
+        DECLARE @SQL NVARCHAR(MAX);
+        SET @SQL = '
+            INSERT INTO #TempAsistencia
+            SELECT 
+                [Nro de Socio], 
+                [Actividad], 
+                TRY_CONVERT(DATE, [fecha de asistencia], 103),
+                LEFT(LTRIM(RTRIM([Asistencia])), 1),
+                [Profesor]
+            FROM OPENROWSET(
+                ''Microsoft.ACE.OLEDB.16.0'',
+                ''Excel 12.0;HDR=YES;IMEX=1;Database=' + @RutaArchivo + ''',
+                ''SELECT * FROM [' + @NombreHoja + ']'' -- SIN $ si ya lo mandás por parámetro
+            );';
+
+        EXEC sp_executesql @SQL;
+
+        DECLARE 
+            @Id_Socio VARCHAR(20),
+            @Actividad VARCHAR(20),
+            @Fecha DATE,
+            @Asistencia CHAR(1),
+            @Profesor VARCHAR(50);
+
+        WHILE EXISTS(SELECT 1 FROM #TempAsistencia)
+		BEGIN
+			SELECT TOP 1
+				@Id_Socio = TRIM(Id_Socio),
+				@Actividad = TRIM(Actividad),
+				@Fecha = Fecha,
+				@Asistencia = Asistencia,
+				@Profesor = TRIM(Profesor)
+			FROM #TempAsistencia;
+
+			-- Validación de actividad
+			IF NOT EXISTS (
+				SELECT 1
+				FROM Activity.Actividad
+				WHERE LTRIM(RTRIM(Nombre)) COLLATE Latin1_General_CI_AI 
+					= LTRIM(RTRIM(@Actividad)) COLLATE Latin1_General_CI_AI
+			)
+			BEGIN
+				PRINT CONCAT('Actividad inválida: ', @Actividad)
+				DELETE FROM #TempAsistencia
+				WHERE	Id_Socio = @Id_Socio
+				  AND 	Actividad = @Actividad
+				  AND	Fecha = @Fecha
+				  AND	Asistencia = @Asistencia
+				  AND   Profesor = @Profesor
+				CONTINUE
+			END
+
+			EXEC Activity.Agr_Asistencia
+				@Id_Socio,
+				@Actividad,
+				@Fecha,
+				@Asistencia,
+				@Profesor;
+
+			DELETE FROM #TempAsistencia
+			WHERE	Id_Socio = @Id_Socio
+			  AND 	Actividad = @Actividad
+			  AND	Fecha = @Fecha
+			  AND	Asistencia = @Asistencia
+			  AND   Profesor = @Profesor
+		END
+
+        DROP TABLE #TempAsistencia;
+    END TRY
+    BEGIN CATCH
+        DECLARE 
+            @ErrorMessage NVARCHAR(4000),
+            @ErrorSeverity INT,
+            @ErrorState INT;
+
+        SELECT 
+            @ErrorMessage = ERROR_MESSAGE(),
+            @ErrorSeverity = ERROR_SEVERITY(),
+            @ErrorState = ERROR_STATE();
+
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+CREATE OR ALTER PROCEDURE Payment.Importar_Pagos
+    @RutaArchivo NVARCHAR(256),
+    @NombreHoja NVARCHAR(128)
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
+
+        CREATE TABLE #TempPagos (
+            Id_Pago BIGINT,
+            Fecha DATE,
+            Responsable VARCHAR(20),
+            Valor DECIMAL(18,2),
+            Medio VARCHAR(50)
+        );
+
+        -- Importar datos desde el Excel
+        DECLARE @SQL NVARCHAR(MAX);
+        SET @SQL = '
+            INSERT INTO #TempPagos
+            SELECT 
+                CAST([Id de pago] AS BIGINT),
+                TRY_CONVERT(DATE, [fecha], 103),
+                TRIM([Responsable de pago]),
+                [Valor],
+                TRIM([Medio de pago])
+            FROM OPENROWSET(
+                ''Microsoft.ACE.OLEDB.16.0'',
+                ''Excel 12.0;Database=' + @RutaArchivo + ';HDR=YES;IMEX=1'',
+                ''SELECT * FROM [' + @NombreHoja + ']'' 
+            );';
+        EXEC sp_executesql @SQL;
+
+        DECLARE 
+            @Id_Pago BIGINT,
+            @Fecha DATE,
+            @Responsable VARCHAR(20),
+            @Valor DECIMAL(18,2),
+            @Medio VARCHAR(50);
+
+        WHILE EXISTS(SELECT 1 FROM #TempPagos)
+        BEGIN
+            SELECT TOP 1
+                @Id_Pago = Id_Pago,
+                @Responsable = TRIM(Responsable),
+                @Fecha = Fecha,
+                @Valor = Valor,
+                @Medio = TRIM(Medio)
+            FROM #TempPagos;
+
+            EXEC Payment.Agr_Pago
+                @Id_Socio = @Responsable,
+                @Id_Pago = @Id_Pago,
+                @Id_Factura = NULL,
+                @Fecha_Pago = @Fecha,
+                @Medio_Pago = @Medio,
+                @Monto = @Valor,
+                @Reembolso = 0,
+                @Cantidad_Pago = @Valor,
+                @Pago_Cuenta = 0;
+
+            DELETE TOP (1)
+            FROM #TempPagos
+            WHERE Id_Pago = @Id_Pago;
+        END
+
+        DROP TABLE #TempPagos;
+    END TRY
+    BEGIN CATCH
+        DECLARE 
+            @ErrorMessage NVARCHAR(4000),
+            @ErrorSeverity INT,
+            @ErrorState INT;
+
+        SELECT 
+            @ErrorMessage = ERROR_MESSAGE(),
+            @ErrorSeverity = ERROR_SEVERITY(),
+            @ErrorState = ERROR_STATE();
+
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO

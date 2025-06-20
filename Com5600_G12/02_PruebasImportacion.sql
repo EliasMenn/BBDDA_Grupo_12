@@ -1,4 +1,5 @@
 USE master
+GO
 
 USE Com5600_G12
 GO
@@ -46,6 +47,7 @@ SELECT * FROM Person.Persona
 SELECT * FROM Person.Socio
 SELECT * FROM Person.Tutor
 
+/*
 DELETE FROM Person.Socio
 
 DELETE FROM Person.Tutor
@@ -53,6 +55,7 @@ DBCC CHECKIDENT ('Person.Tutor', RESEED, 0);
 
 DELETE FROM Person.Persona
 DBCC CHECKIDENT ('Person.Persona', RESEED, 0);
+*/
 
 ---------------------------------------------------------------------------------------
 ------------------------------------ GRUPO FAMILIAR -----------------------------------
@@ -63,8 +66,8 @@ EXEC Groups.ImportarGrupoFamiliar
 SELECT * FROM Groups.Grupo_Familiar
 SELECT * FROM Groups.Miembro_Familia ORDER BY Id_Familia
 
-DELETE FROM Groups.Miembro_Familia
-DELETE FROM Groups.Grupo_Familiar
+--DELETE FROM Groups.Miembro_Familia
+--DELETE FROM Groups.Grupo_Familiar
 
 ---------------------------------------------------------------------------------------
 ----------------------------------- ACTIVIDADES ---------------------------------------
@@ -73,6 +76,10 @@ EXEC Activity.Importar_Actividades
     @RutaArchivo = N'C:\Users\Pedro Melissari\Desktop\Archivos BDD\Datos socios.xlsx',
     @NombreHoja = N'Tarifas',
     @RangoCeldas = N'B1:D8';
+
+UPDATE Activity.Actividad
+SET Nombre = 'Ajedrez'
+WHERE Nombre = 'Ajederez';
 
 --DELETE FROM Activity.Actividad
 SELECT * FROM Activity.Actividad
@@ -87,7 +94,6 @@ EXEC Activity.Importar_Costos_Actividad_Extra
 
 SELECT * FROM Activity.Costo_Actividad_Extra
 --DELETE FROM Activity.Costo_Actividad_Extra
-
 
 ---------------------------------------------------------------------------------------
 --------------------------- TIPOS DE MEDIO DE PAGO ------------------------------------
@@ -161,7 +167,24 @@ END
 SELECT * FROM Payment.Medio_Pago p JOIN Payment.TipoMedio t ON p.Id_TipoMedio = t .Id_TipoMedio
 
 
+---------------------------------------------------------------------------------------
+------------------------------------- ASISTENCIAS -------------------------------------
 
+EXEC Activity.Importar_Asistencia
+    @RutaArchivo = 'C:\Users\Pedro Melissari\Desktop\Archivos BDD\Datos socios.xlsx',
+    @NombreHoja = 'presentismo_actividades$'
 
+SELECT * FROM Activity.Asistencia
+--DELETE FROM Activity.Asistencia
 
+--SELECT Nombre FROM Activity.Actividad
 
+---------------------------------------------------------------------------------------
+------------------------------------- PAGOS -------------------------------------------
+
+EXEC Payment.Importar_Pagos
+    @RutaArchivo = 'C:\Users\Pedro Melissari\Desktop\Archivos BDD\Datos socios.xlsx',
+    @NombreHoja = 'pago cuotas$'
+
+SELECT * FROM Payment.Pago ORDER BY Responsable_Original
+--DELETE FROM Payment.Pago
