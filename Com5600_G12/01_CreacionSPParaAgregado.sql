@@ -329,7 +329,7 @@ BEGIN
 			RAISERROR('.',16,1)
 		END
 
-		IF @Descripcion = '' OR @Descripcion LIKE '%[^a-zA-Z _]%' OR LEN(@Descripcion) > 50
+		IF @Descripcion = '' OR @Descripcion LIKE '%[^a-zA-Z ]%' OR LEN(@Descripcion) > 50
 		BEGIN
 			PRINT('Descripción inválida');
 			RAISERROR('.', 16, 1)
@@ -409,15 +409,12 @@ BEGIN
 		SET @Vigencia = DATEADD(YEAR,1,GETDATE())
 		SET @ContraseniaHash = HASHBYTES('SHA2_256', CONVERT(NVARCHAR(100), @Contrasenia))
 
-		--
+		
 	SELECT @Descripcion_Rol = Desc_Rol FROM Person.Rol
 	WHERE @Id_Rol = Id_Rol
+
 	-- Crear usuario dinámicamente
 	SET @sql = N'CREATE USER ' + QUOTENAME(@Nombre_Usuario) + N' WITHOUT LOGIN';
-    EXEC sp_executesql @sql;
-
-	-- Agregar al rol dinámicamente
-	SET @sql = N'ALTER ROLE ' + QUOTENAME(@Descripcion_Rol) + N' ADD MEMBER ' + QUOTENAME(@Nombre_Usuario);
     EXEC sp_executesql @sql;
 
 
