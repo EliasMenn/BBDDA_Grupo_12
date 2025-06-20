@@ -161,7 +161,12 @@ END
 SELECT * FROM Payment.Medio_Pago p JOIN Payment.TipoMedio t ON p.Id_TipoMedio = t .Id_TipoMedio
 
 
+-- Probamos la importacion de asistencias --
 
+EXEC Activity.Importar_Asistencia
+    @RutaArchivo = 'C:\Users\Pedro Melissari\Desktop\Archivos BDD\Datos socios.xlsx',
+    @NombreHoja = 'presentismo_actividades'
 
+SELECT * FROM Activity.Asistencia
 
 

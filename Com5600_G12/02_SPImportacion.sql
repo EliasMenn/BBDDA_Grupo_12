@@ -498,3 +498,74 @@ BEGIN
 END
 GO
 
+CREATE OR ALTER PROCEDURE Activity.Importar_Asistencia
+    @RutaArchivo NVARCHAR(256),
+    @NombreHoja NVARCHAR(128)
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
+
+        -- Tabla temporal para importar el rango
+        CREATE TABLE #TempAsistencia (
+			Id_Socio VARCHAR(20),
+			Actividad VARCHAR(20),
+			Fecha DATE,
+			Asistencia CHAR(1),
+			Profesor VARCHAR(50)
+        );
+
+        -- Importar desde Excel
+        DECLARE @SQL NVARCHAR(MAX);
+        SET @SQL = '
+            INSERT INTO #TempAsistencia
+            SELECT 
+                [Nro de Socio], 
+                [Actividad], 
+                TRY_CONVERT(DATE, [Fecha de asistencia], 103),
+				[Asistencia]
+				[Profesor]
+            FROM OPENROWSET(
+                ''Microsoft.ACE.OLEDB.16.0'',
+                ''Excel 12.0;Database=' + @RutaArchivo + ';HDR=YES;IMEX=1'',
+                ''SELECT * FROM [' + @NombreHoja + ']'' 
+            );';
+		EXEC sp_executesql @SQL
+		
+		DECLARE 
+		    @Id_Socio VARCHAR(20),
+			@Actividad VARCHAR(20),
+			@Fecha DATE,
+			@Asistencia CHAR(1),
+			@Profesor VARCHAR(50)
+
+		WHILE EXISTS(SELECT 1 FROM #TempAsistencia)
+		BEGIN
+			SELECT TOP 1
+				@Id_Socio = Id_Socio,
+				@Actividad = Actividad,
+				@Fecha = Fecha,
+				@Asistencia = Asistencia,
+				@Profesor = Profesor
+			FROM #TempAsistencia
+
+			EXEC Activity.Agr_Asistencia
+				@Id_Socio,
+				@Actividad,
+				@Fecha,
+				@Asistencia,
+				@Profesor
+
+			DELETE TOP (1) FROM #TempAsistencia
+			WHERE	@Id_Socio = Id_Socio
+			  AND 	@Actividad = Actividad
+			  AND	@Fecha = Fecha
+			  AND	@Asistencia = Asistencia
+			  AND   @Profesor = Profesor
+		END
+		DROP TABLE #TempAsistencia
+	END TRY
+    BEGIN CATCH
+        RAISERROR('Error en la importacion',16,1)
+    END CATCH
+END
