@@ -148,17 +148,16 @@ END;
 GO
 
 --Importacion de la hoja 'Grupo Familiar'
-
 CREATE OR ALTER PROCEDURE Groups.ImportarGrupoFamiliar
     @RutaArchivo NVARCHAR(256),
     @NombreHoja NVARCHAR(256)  -- Ejemplo: 'Grupo Familiar$'
 AS
 BEGIN
     SET NOCOUNT ON;
-	CREATE TABLE #DNI_Repetidos (
-    DNI VARCHAR(15)
-	);
 
+    CREATE TABLE #DNI_Repetidos (
+        DNI VARCHAR(15)
+    );
 
     CREATE TABLE #TempGrupoFamiliar (
         Id_Socio VARCHAR(20),
@@ -190,7 +189,7 @@ BEGIN
         FROM OPENROWSET(
             ''Microsoft.ACE.OLEDB.16.0'',
             ''Excel 12.0;Database=' + @RutaArchivo + ';HDR=YES;IMEX=1'',
-            ''SELECT * FROM [' + @NombreHoja + ']''
+            ''SELECT * FROM [' + @NombreHoja + ']'' 
         );
     ';
     EXEC sp_executesql @SQL;
@@ -231,22 +230,31 @@ BEGIN
         WHERE p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
     );
 
-    -- Insertar en Socio
-    INSERT INTO Person.Socio (Id_Socio, Id_Persona, Id_Categoria, Telefono_Emergencia, Obra_Social, Nro_Obra_Social)
+    -- Insertar en Socio con cálculo de categoría por edad
+    INSERT INTO Person.Socio (
+        Id_Socio, Id_Persona, Id_Categoria, Telefono_Emergencia, Obra_Social, Nro_Obra_Social
+    )
     SELECT
         t.Id_Socio,
         p.Id_Persona,
-        100,
+        c.Id_Categoria,
         NULL,
         t.ObraSocial,
         t.NroObraSocial
     FROM #TempGrupoFamiliar t
-    JOIN Person.Persona p ON p.DNI = t.DNI COLLATE Latin1_General_CI_AS
+    JOIN Person.Persona p 
+        ON p.DNI COLLATE Latin1_General_CI_AS = t.DNI COLLATE Latin1_General_CI_AS
+    JOIN Groups.Categoria c
+        ON (
+            DATEDIFF(YEAR, t.FechaNacimiento, GETDATE()) 
+            - CASE WHEN MONTH(t.FechaNacimiento) > MONTH(GETDATE()) 
+                     OR (MONTH(t.FechaNacimiento) = MONTH(GETDATE()) AND DAY(t.FechaNacimiento) > DAY(GETDATE())) 
+                   THEN 1 ELSE 0 END
+        ) BETWEEN c.EdadMin AND c.EdadMax
     WHERE NOT EXISTS (
         SELECT 1 FROM Person.Socio s 
         WHERE s.Id_Socio COLLATE Latin1_General_CI_AS = t.Id_Socio COLLATE Latin1_General_CI_AS
     );
-
 
     -- Asignar Id_Tutor a los socios del grupo familiar
     UPDATE S
@@ -260,39 +268,39 @@ BEGIN
         ON T.Id_Persona = STutor.Id_Persona
     WHERE S.Id_Tutor IS NULL;
 
-	--Grupo familiar 
-	INSERT INTO Groups.Grupo_Familiar (Nombre_Familia, Activo)
-	SELECT 
-		'Familia ' + p.Apellido AS Nombre_Familia,
-		1 AS Activo
-	FROM Person.Tutor t
-	JOIN Person.Persona p ON p.Id_Persona = t.Id_Persona
-	WHERE NOT EXISTS (
-		SELECT 1
-		FROM Groups.Grupo_Familiar gf
-		WHERE gf.Nombre_Familia = 'Familia ' + p.Apellido
-	);
+    -- Grupo familiar
+    INSERT INTO Groups.Grupo_Familiar (Nombre_Familia, Activo)
+    SELECT 
+        'Familia ' + p.Apellido AS Nombre_Familia,
+        1 AS Activo
+    FROM Person.Tutor t
+    JOIN Person.Persona p ON p.Id_Persona = t.Id_Persona
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM Groups.Grupo_Familiar gf
+        WHERE gf.Nombre_Familia = 'Familia ' + p.Apellido
+    );
 
-	
-	--Insertamos niños
-	INSERT INTO Groups.Miembro_Familia (Id_Socio, Id_Familia)
-	SELECT
-		s.Id_Socio,
-		gf.Id_Grupo_Familiar
-	FROM Person.Socio s
-	JOIN Person.Tutor t ON t.Id_Tutor = s.Id_Tutor
-	JOIN Person.Persona p ON p.Id_Persona = t.Id_Persona
-	JOIN Groups.Grupo_Familiar gf ON gf.Nombre_Familia = 'Familia ' + p.Apellido
-	WHERE NOT EXISTS (
-		SELECT 1
-		FROM Groups.Miembro_Familia mf
-		WHERE mf.Id_Socio = s.Id_Socio
-	);
+    -- Miembros de familia
+    INSERT INTO Groups.Miembro_Familia (Id_Socio, Id_Familia)
+    SELECT
+        s.Id_Socio,
+        gf.Id_Grupo_Familiar
+    FROM Person.Socio s
+    JOIN Person.Tutor t ON t.Id_Tutor = s.Id_Tutor
+    JOIN Person.Persona p ON p.Id_Persona = t.Id_Persona
+    JOIN Groups.Grupo_Familiar gf ON gf.Nombre_Familia = 'Familia ' + p.Apellido
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM Groups.Miembro_Familia mf
+        WHERE mf.Id_Socio = s.Id_Socio
+    );
 
     DROP TABLE #TempGrupoFamiliar;
     PRINT 'Importación de grupo familiar exitosa.';
 END;
 GO
+
 
 CREATE OR ALTER PROCEDURE Activity.Importar_Actividades
     @RutaArchivo NVARCHAR(256),

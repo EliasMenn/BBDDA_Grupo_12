@@ -32,7 +32,9 @@ EXEC Groups.Importar_Categorias
     @RangoCeldas = N'B10:D13';
 
 SELECT * FROM Groups.Categoria
---DELETE FROM Groups.Categoria
+
+DELETE FROM Groups.Categoria
+DBCC CHECKIDENT ('Groups.Categoria', RESEED, 99);
 
 ---------------------------------------------------------------------------------------
 ------------------------------ RESPONSABLES DE PAGO -----------------------------------
@@ -45,8 +47,12 @@ SELECT * FROM Person.Socio
 SELECT * FROM Person.Tutor
 
 DELETE FROM Person.Socio
+
 DELETE FROM Person.Tutor
+DBCC CHECKIDENT ('Person.Tutor', RESEED, 0);
+
 DELETE FROM Person.Persona
+DBCC CHECKIDENT ('Person.Persona', RESEED, 0);
 
 ---------------------------------------------------------------------------------------
 ------------------------------------ GRUPO FAMILIAR -----------------------------------
@@ -55,7 +61,7 @@ EXEC Groups.ImportarGrupoFamiliar
 	@NombreHoja = 'Grupo Familiar$'
 
 SELECT * FROM Groups.Grupo_Familiar
-SELECT * FROM Groups.Miembro_Familia
+SELECT * FROM Groups.Miembro_Familia ORDER BY Id_Familia
 
 DELETE FROM Groups.Miembro_Familia
 DELETE FROM Groups.Grupo_Familiar
@@ -151,6 +157,8 @@ BEGIN
 
     DELETE FROM #SociosSinEfectivo WHERE Id_Persona = @IdPersona;
 END
+
+SELECT * FROM Payment.Medio_Pago p JOIN Payment.TipoMedio t ON p.Id_TipoMedio = t .Id_TipoMedio
 
 
 
