@@ -22,7 +22,6 @@ GO
 DROP DATABASE COM5600_G12;
 GO */
 
-
 IF DB_ID('COM5600_G12') IS NULL
     CREATE DATABASE COM5600_G12 COLLATE Latin1_General_CI_AS;
 GO	
@@ -258,6 +257,19 @@ BEGIN
 		Nombre VARCHAR(50),
 		Costo DECIMAL,
 		Descr VARCHAR(50),
+		Vigente_Hasta DATE
+	)
+END
+
+IF OBJECT_ID('Activity.Costo_Actividad_Extra') IS NULL
+BEGIN
+	CREATE TABLE Activity.Costo_Actividad_Extra
+	(
+		Id_Costo INT IDENTITY(1,1) PRIMARY KEY,
+		Tipo_Valor VARCHAR(20),
+		Categoria VARCHAR(20),
+		Costo_Socios DECIMAL,
+		Costo_Invitados DECIMAL,
 		Vigente_Hasta DATE
 	)
 END

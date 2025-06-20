@@ -1075,6 +1075,68 @@ BEGIN
 END
 GO
 
+-- Para tabla Costo Actividad Extra
+CREATE OR ALTER PROCEDURE Activity.Agr_Costo_Actividad_Extra
+    @Tipo_Valor VARCHAR(20),
+    @Categoria VARCHAR(20),
+    @Costo_Socios DECIMAL,
+    @Costo_Invitados DECIMAL,
+    @Vigente_Hasta DATE
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
+
+        -- Validaciones de texto
+        SET @Tipo_Valor = TRIM(@Tipo_Valor);
+        SET @Categoria = TRIM(@Categoria);
+
+        IF @Tipo_Valor = '' OR LEN(@Tipo_Valor) > 20
+        BEGIN
+            PRINT('Tipo de valor inválido');
+            RAISERROR('.', 16, 1);
+        END
+
+        IF @Categoria = '' OR LEN(@Categoria) > 20
+        BEGIN
+            PRINT('Categoría inválida');
+            RAISERROR('.', 16, 1);
+        END
+
+        -- Validaciones numéricas
+        IF @Costo_Socios IS NULL OR @Costo_Socios < 0
+        BEGIN
+            PRINT('El costo para socios no puede ser nulo o negativo');
+            RAISERROR('.', 16, 1);
+        END
+
+        IF @Costo_Invitados IS NULL OR @Costo_Invitados < 0
+        BEGIN
+            PRINT('El costo para invitados no puede ser nulo o negativo');
+            RAISERROR('.', 16, 1);
+        END
+
+        -- Validación de fecha
+        IF @Vigente_Hasta IS NULL OR @Vigente_Hasta < GETDATE()
+        BEGIN
+            PRINT('La fecha de vigencia debe ser futura');
+            RAISERROR('.', 16, 1);
+        END
+
+        -- Inserción
+        INSERT INTO Activity.Costo_Actividad_Extra (Tipo_Valor, Categoria, Costo_Socios, Costo_Invitados, Vigente_Hasta)
+        VALUES (@Tipo_Valor, @Categoria, @Costo_Socios, @Costo_Invitados, @Vigente_Hasta);
+
+        PRINT('Costo de actividad extra agregado correctamente');
+    END TRY
+    BEGIN CATCH
+        PRINT('Error al agregar el costo de actividad extra');
+        THROW;
+    END CATCH
+END
+GO
+
+
 -- Para tabla Actividad_Horario --
 
 CREATE OR ALTER PROCEDURE Activity.Agr_Horario

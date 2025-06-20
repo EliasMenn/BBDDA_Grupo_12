@@ -431,5 +431,66 @@ BEGIN
         PRINT 'Error general en la importación: ' + ERROR_MESSAGE();
     END CATCH
 END
+GO
 
+CREATE OR ALTER PROCEDURE Activity.Importar_Costos_Actividad_Extra
+    @RutaArchivo NVARCHAR(256),
+    @NombreHoja NVARCHAR(128),
+    @RangoCeldas NVARCHAR(50)
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
+
+        -- Tabla temporal genérica
+        CREATE TABLE #TmpExcel (
+            F1 NVARCHAR(50),  -- Tipo_Valor
+            F2 NVARCHAR(50),  -- Categoria
+            F3 NVARCHAR(50),  -- Socios
+            F4 NVARCHAR(50),  -- Invitados
+            F5 NVARCHAR(50)   -- Fecha
+        );
+
+        -- Cargar desde Excel
+        DECLARE @SQL NVARCHAR(MAX);
+        SET @SQL = '
+            INSERT INTO #TmpExcel (F1, F2, F3, F4, F5)
+            SELECT * 
+            FROM OPENROWSET(
+                ''Microsoft.ACE.OLEDB.16.0'',
+                ''Excel 12.0;HDR=NO;IMEX=1;Database=' + @RutaArchivo + ''',
+                ''SELECT * FROM [' + @NombreHoja + '$' + @RangoCeldas + ']''
+            );';
+        EXEC sp_executesql @SQL;
+
+        -- Tabla intermedia con propagación del tipo
+        WITH DatosConTipo AS (
+            SELECT 
+                Tipo_Valor = 
+                    ISNULL(NULLIF(F1, ''), 
+                        LAST_VALUE(NULLIF(F1, '')) 
+                        IGNORE NULLS OVER (ORDER BY (SELECT NULL) 
+                        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)),
+                Categoria = F2,
+                Socios = TRY_CAST(REPLACE(REPLACE(REPLACE(F3, '$', ''), '.', ''), ',', '.') AS DECIMAL(18,2)),
+                Invitados = TRY_CAST(REPLACE(REPLACE(REPLACE(F4, '$', ''), '.', ''), ',', '.') AS DECIMAL(18,2)),
+                Vigente_Hasta = TRY_CONVERT(DATE, F5, 103)
+            FROM #TmpExcel
+        )
+
+        -- Insertar directamente
+        INSERT INTO Activity.Costo_Actividad_Extra (Tipo_Valor, Categoria, Costo_Socios, Costo_Invitados, Vigente_Hasta)
+        SELECT Tipo_Valor, Categoria, Socios, Invitados, Vigente_Hasta
+        FROM DatosConTipo
+        WHERE Categoria IS NOT NULL AND Vigente_Hasta IS NOT NULL;
+
+        DROP TABLE #TmpExcel;
+
+        PRINT 'Importación completada con éxito.';
+    END TRY
+    BEGIN CATCH
+        PRINT 'Error en la importación: ' + ERROR_MESSAGE();
+    END CATCH
+END
+GO
 
