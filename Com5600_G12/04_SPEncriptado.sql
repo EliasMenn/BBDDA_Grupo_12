@@ -97,8 +97,9 @@ BEGIN
 		WHERE Id_Persona = @Id_Persona
 
 		UPDATE Person.Usuario
-			SET Nombre_Usuario_Cifrado = @Nombre_Usuario_Cifrado,
-			SET Nombre_Usuario = NULL
+			SET 
+			Nombre_Usuario_Cifrado = @Nombre_Usuario_Cifrado,
+			Nombre_Usuario = NULL
 		WHERE Id_Persona = @Id_Persona;
 
 		UPDATE Person.Persona
