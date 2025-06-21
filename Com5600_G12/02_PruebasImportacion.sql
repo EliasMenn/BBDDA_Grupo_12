@@ -98,33 +98,44 @@ SELECT * FROM Activity.Costo_Actividad_Extra
 ---------------------------------------------------------------------------------------
 --------------------------- TIPOS DE MEDIO DE PAGO ------------------------------------
 
--- Efectivo
+-- Visa
 EXEC Payment.Agr_TipoMedio 
-    @Nombre_Medio = 'efectivo', 
-    @Datos_Necesarios = 'ninguno';
-
--- Transferencia
-EXEC Payment.Agr_TipoMedio 
-    @Nombre_Medio = 'transferencia', 
-    @Datos_Necesarios = 'CBU, Alias';
-
--- Débito automático
-EXEC Payment.Agr_TipoMedio 
-    @Nombre_Medio = 'débito automático', 
-    @Datos_Necesarios = 'número de tarjeta, vencimiento';
-
--- Tarjeta de crédito
-EXEC Payment.Agr_TipoMedio 
-    @Nombre_Medio = 'tarjeta de crédito', 
+    @Nombre_Medio = 'Visa', 
     @Datos_Necesarios = 'número de tarjeta, código de seguridad, vencimiento';
 
--- MercadoPago
+-- MasterCard
 EXEC Payment.Agr_TipoMedio 
-    @Nombre_Medio = 'MercadoPago', 
-    @Datos_Necesarios = 'email asociado a cuenta';
+    @Nombre_Medio = 'MasterCard', 
+    @Datos_Necesarios = 'número de tarjeta, código de seguridad, vencimiento';
+
+-- Tarjeta Naranja
+EXEC Payment.Agr_TipoMedio 
+    @Nombre_Medio = 'Tarjeta Naranja', 
+    @Datos_Necesarios = 'número de tarjeta, código de seguridad, vencimiento';
+
+-- Débito Automático (vía tarjeta de crédito)
+EXEC Payment.Agr_TipoMedio 
+    @Nombre_Medio = 'Débito Automático', 
+    @Datos_Necesarios = 'número de tarjeta, vencimiento';
+
+-- Pago Fácil
+EXEC Payment.Agr_TipoMedio 
+    @Nombre_Medio = 'Pago Fácil', 
+    @Datos_Necesarios = 'DNI del titular';
+
+-- Rapipago
+EXEC Payment.Agr_TipoMedio 
+    @Nombre_Medio = 'Rapipago', 
+    @Datos_Necesarios = 'DNI del titular';
+
+-- Transferencia Mercado Pago
+EXEC Payment.Agr_TipoMedio 
+    @Nombre_Medio = 'Transferencia Mercado Pago', 
+    @Datos_Necesarios = 'email asociado a cuenta, alias o CVU';
 
 SELECT * FROM Payment.TipoMedio
 --DELETE FROM Payment.TipoMedio
+--DELETE FROM Payment.Medio_Pago
 
 ---------------------------------------------------------------------------------------
 --------------------------------- SOCIO/MEDIO DE PAGO ---------------------------------
