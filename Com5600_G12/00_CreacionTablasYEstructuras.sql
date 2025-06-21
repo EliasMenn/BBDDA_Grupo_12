@@ -75,11 +75,12 @@ BEGIN
 		Fecha_Nacimiento DATE,
 		Telefono_Contacto VARCHAR(15),
 
-		Telefono_Contacto_Cifrado VARBINARY(256),
-		Email_Cifrado VARBINARY(256),
-		Nombre_Cifrado VARBINARY(256),
-		Apellido_Cifrado VARBINARY(256),
-		DNI_Cifrado VARBINARY(256)
+		Nombre_Cifrado VARBINARY(MAX),
+		Apellido_Cifrado VARBINARY(MAX),
+		DNI_Cifrado VARBINARY(MAX),
+		Email_Cifrado VARBINARY(MAX),
+		Telefono_Contacto_Cifrado VARBINARY(MAX)
+
 	);
 END
 
@@ -109,7 +110,11 @@ BEGIN
 		CONSTRAINT FK_Socio_Persona
 		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona),
 		CONSTRAINT FK_Socio_Tutor
-		FOREIGN KEY (Id_Tutor) REFERENCES Person.Tutor(Id_Tutor)
+		FOREIGN KEY (Id_Tutor) REFERENCES Person.Tutor(Id_Tutor),
+		Telefono_Emergencia_Cifrado VARBINARY(MAX),
+		Obra_Social_Cifrado VARBINARY(MAX),
+		Nro_Obra_Social_Cifrado VARBINARY(MAX)
+
 	);
 END
 
@@ -130,13 +135,14 @@ BEGIN
 		Id_Rol INT NOT NULL,
 		Id_Persona INT PRIMARY KEY,
 		Nombre_Usuario VARCHAR(30),
-		Nombre_Usuario_Cifrado VARBINARY(256),
 		Contrasenia VARBINARY(32),
 		Vigencia_Contrasenia DATE,
 		CONSTRAINT FK_Usuario_Rol
 		FOREIGN KEY (Id_Rol) REFERENCES Person.Rol(Id_Rol),
 		CONSTRAINT FK_Usuario_Persona
-		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona)
+		FOREIGN KEY (Id_Persona) REFERENCES Person.Persona(Id_Persona),
+		Nombre_Usuario_Cifrado VARBINARY(MAX)
+
 	);
 END
 
