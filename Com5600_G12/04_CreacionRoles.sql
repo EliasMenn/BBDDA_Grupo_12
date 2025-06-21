@@ -176,11 +176,11 @@ GRANT SELECT, INSERT, UPDATE ON Groups.Miembro_Familia TO Administrativo_Socio;
 -- Permisos para consultar categorías (no modifica)
 GRANT SELECT ON Groups.Categoria TO Administrativo_Socio;
 -----------------------------------------------------------------------------------------------------------------------------------
-
+GO
 
 ------------------------------------------------PARA ROL DE SOCIO WEB------------------------------------------------
 --No deberia poder hacer nada en realidad, osea no es un empleado, es un socio, solo deberia ver su cuenta
-	CREATE OR ALTER VIEW Payment.verCuenta
+CREATE OR ALTER VIEW Payment.verCuenta
 	AS
 	SELECT
 		c.Id_Persona,
@@ -188,9 +188,8 @@ GRANT SELECT ON Groups.Categoria TO Administrativo_Socio;
 		u.Nombre_Usuario
 	FROM Payment.Cuenta c
 	JOIN Person.Usuario u ON c.Id_Persona = u.Id_Persona;
-	GO
-
-	GRANT SELECT ON Payment.verCuenta TO Socio_Web;
+GO
+GRANT SELECT ON Payment.verCuenta TO Socio_Web;
 /*ESE SOCIO WEB PODRA VER SU CUENTA YA QUE LE DAMOS EL PERMISO DE USAR ESTE SP
 Y NADA MAS */
 
@@ -257,13 +256,21 @@ EXEC Person.Agr_Usuario
 	@Nombre_Usuario='FyJ123%',
 	@Contrasenia = 'lascabrassolindas2131'
 
+
+EXEC Person.Encriptar_Empleado 
+	@id_Persona = 1
+
+EXEC Person.Desencriptar_Empleado
+	@Id_Persona = 1
+
 select * from Person.Persona p
 JOIN Person.Socio s ON s.Id_Persona = p.Id_Persona
 JOIN Person.Usuario u ON u.Id_Persona = p.Id_Persona
 
-
 EXEC Person.Encriptar_Empleado 
 	@id_Persona = 1
+EXEC Person.Desencriptar_Empleado
+	@Id_Persona = 1
 
 select * from Person.Persona p
 JOIN Person.Socio s ON s.Id_Persona = p.Id_Persona

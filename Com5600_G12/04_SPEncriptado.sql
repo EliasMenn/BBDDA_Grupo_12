@@ -21,7 +21,7 @@ BEGIN
     BEGIN TRY
         SET NOCOUNT ON;
 
-        DECLARE @FraseSecreta NVARCHAR(128) = 'VivaelFulvol';
+        DECLARE @FraseSecreta NVARCHAR(128) = 'LasCabras_JairHnatiuk&JulioBossero';
 
         DECLARE @Nombre_Usuario_Cifrado VARBINARY(MAX) 
         DECLARE @Nombre_Cifrado VARBINARY(MAX)
@@ -123,3 +123,120 @@ BEGIN
         RAISERROR('Error',16,1);
     END CATCH
 END;
+GO
+
+
+
+CREATE OR ALTER PROCEDURE Person.Desencriptar_Empleado
+    @Id_Persona INT
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
+
+        DECLARE @FraseSecreta NVARCHAR(128) = 'LasCabras_JairHnatiuk&JulioBossero';
+		
+        DECLARE @Nombre_Usuario_Cifrado VARBINARY(MAX) 
+        DECLARE @Nombre_Cifrado VARBINARY(MAX)
+        DECLARE @Apellido_Cifrado VARBINARY(MAX)
+        DECLARE @DNI_Cifrado VARBINARY(MAX)
+        DECLARE @Email_Cifrado VARBINARY(MAX)
+        DECLARE @Telefono_Contacto_Cifrado VARBINARY(MAX)
+        DECLARE @Telefono_Emergencia_Cifrado VARBINARY(MAX)
+        DECLARE @Obra_Social_Cifrado VARBINARY(MAX)
+        DECLARE @Nro_Obra_Social_Cifrado VARBINARY(MAX)
+
+        DECLARE @Nombre_Usuario VARCHAR(30)
+        DECLARE @Nombre VARCHAR(25)
+        DECLARE @Apellido VARCHAR(25)
+        DECLARE @DNI VARCHAR(15)
+        DECLARE @Email VARCHAR(50)
+        DECLARE @Telefono_Contacto VARCHAR(15)
+        DECLARE @Telefono_Emergencia VARCHAR(15)
+        DECLARE @Obra_Social VARCHAR(100)
+        DECLARE @Nro_Obra_Social VARCHAR(20)
+ 
+
+        -- Validar existencia de la persona
+        IF NOT EXISTS (SELECT 1 FROM Person.Persona WHERE Id_Persona = @Id_Persona)
+        BEGIN
+            RAISERROR('La persona con el Id especificado no existe.', 16, 1);
+            RETURN;
+        END
+		
+		
+		SELECT TOP 1 
+		@Nombre_Usuario_Cifrado = u.Nombre_Usuario_Cifrado,
+		@Nombre_Cifrado = p.Nombre_Cifrado, 
+		@Apellido_Cifrado = p.Apellido_Cifrado, 
+		@DNI_Cifrado = p.DNI_Cifrado, 
+		@Email_Cifrado = p.Email_Cifrado, 
+		@Telefono_Contacto_Cifrado = p.Telefono_Contacto_Cifrado,
+		@Telefono_Emergencia_Cifrado = s.Telefono_Emergencia_Cifrado,
+		@Obra_Social_Cifrado = s.Obra_Social_Cifrado,
+		@Nro_Obra_Social_Cifrado = s.Nro_Obra_Social_Cifrado
+		FROM Person.Persona p 
+		JOIN Person.Socio s ON s.Id_Persona = p.Id_Persona 
+		JOIN Person.Usuario u ON u.Id_Persona = p.Id_Persona
+		WHERE p.Id_Persona = @Id_Persona 
+		
+
+
+		IF NOT EXISTS (SELECT 1 FROM Person.Persona p
+		JOIN Person.Usuario u ON u.Id_persona = p.Id_Persona 
+		WHERE u.Id_Rol = 6) 
+		BEGIN 
+		
+		SET @Nombre = DecryptByPassPhrase(@FraseSecreta, @Nombre_Cifrado);
+        SET @Apellido = DecryptByPassPhrase(@FraseSecreta, @Apellido_Cifrado);
+        SET @DNI = DecryptByPassPhrase(@FraseSecreta, @DNI_Cifrado);
+        SET @Email = DecryptByPassPhrase(@FraseSecreta, @Email_Cifrado);
+        SET @Telefono_Contacto = DecryptByPassPhrase(@FraseSecreta, @Telefono_Contacto_Cifrado);		
+		SET @Nombre_Usuario = DecryptByPassPhrase(@FraseSecreta, @Nombre_Usuario_Cifrado);
+
+		SET @Telefono_Emergencia = DecryptByPassPhrase(@FraseSecreta, @Telefono_Emergencia_Cifrado);
+        SET @Obra_Social = DecryptByPassPhrase(@FraseSecreta, @Obra_Social_Cifrado);
+        SET @Nro_Obra_Social = DecryptByPassPhrase(@FraseSecreta, @Nro_Obra_Social_Cifrado);
+		
+		UPDATE Person.Socio
+		SET 
+			Telefono_Emergencia = @Telefono_Emergencia,
+			Obra_Social = @Obra_Social,
+			Nro_Obra_Social = @Nro_Obra_Social,
+			
+			Telefono_Emergencia_Cifrado = NULL,
+			Obra_Social_Cifrado = NULL,
+			Nro_Obra_Social_Cifrado = NULL
+		WHERE Id_Persona = @Id_Persona
+
+		UPDATE Person.Usuario
+			SET 
+			Nombre_Usuario = @Nombre_Usuario,
+			Nombre_Usuario_Cifrado = NULL
+		WHERE Id_Persona = @Id_Persona;
+
+		UPDATE Person.Persona
+		SET 
+			Nombre= @Nombre,
+			Apellido = @Apellido,
+			DNI = @DNI,
+			Email= @Email,
+			Telefono_Contacto = @Telefono_Contacto,
+
+			Nombre_Cifrado = NULL,
+			Apellido_Cifrado = NULL,
+			DNI_Cifrado = NULL,
+			Email_Cifrado = NULL,
+			Telefono_Contacto_Cifrado = NULL
+		WHERE Id_Persona = @Id_Persona;
+
+		END
+
+    END TRY
+    BEGIN CATCH
+        RAISERROR('Error',16,1);
+    END CATCH
+END
+GO
+
+
