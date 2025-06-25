@@ -212,6 +212,7 @@ BEGIN
 	CREATE TABLE Payment.Pago
 	(
 		Id_Pago BIGINT PRIMARY KEY,
+		Id_Factura INT,
 		Fecha_Pago DATE,
 		Responsable_Original VARCHAR(20),		-- Acá va el Id_Socio, exista o no
 		Responsable_Valido VARCHAR(20) NULL,    -- FK real, NULL si no existe

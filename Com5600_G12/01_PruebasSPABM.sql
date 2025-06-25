@@ -182,7 +182,8 @@ SELECT * FROM Person.Tutor WHERE Id_Tutor = @Id_Tutor;
 
 -- Crear socio menor con ese tutor (para probar restricción)
 EXEC Person.Agr_Socio
-    @Nombre = 'Lautaro',
+	@NroSocio = 'SN-9999',
+	@Nombre = 'Lautaro',
     @Apellido = 'Gomez',
     @DNI = '99887755',
     @Email = 'lautaro.gomez@mail.com',
@@ -197,7 +198,7 @@ EXEC Person.Agr_Socio
 EXEC Person.Borrar_Tutor @Id_Persona = @IdPersona_Tutor;
 
 -- Borrar al socio para liberar al tutor
-DECLARE @IdSocio INT;
+DECLARE @IdSocio VARCHAR(20);
 SELECT TOP 1 @IdSocio = Id_Socio FROM Person.Socio WHERE Id_Tutor = @Id_Tutor;
 EXEC Person.Borrar_Socio @Id_Socio = @IdSocio;
 
@@ -240,7 +241,7 @@ VALUES ('Adultos', 18, 99, 'Mayores de edad', 1500);
 DECLARE @IdPersona_Socio INT;
 
 EXEC Person.Agr_Socio
-    @IdSocio = 'SN-1234'
+    @NroSocio = 'SN-1234',
 	@Nombre = 'Federico',
     @Apellido = 'Del Valle',
     @DNI = '77777777',
@@ -300,9 +301,10 @@ EXEC @Id_Tutor = Person.Agr_Tutor
 SELECT @IdPersona_Tutor = Id_Persona FROM Person.Tutor WHERE Id_Tutor = @Id_Tutor;
 
 -- Alta del socio menor
-DECLARE @Id_SocioMenor INT, @IdPersona_SocioMenor INT;
+DECLARE @Id_SocioMenor VARCHAR(20), @IdPersona_SocioMenor INT;
 
-EXEC @Id_SocioMenor = Person.Agr_Socio
+EXEC Person.Agr_Socio
+	@NroSocio = 'SN-6666',
     @Nombre = 'Camila',
     @Apellido = 'Salas',
     @DNI = '77889955',
@@ -352,6 +354,7 @@ SELECT * FROM Person.Persona WHERE Id_Persona = @IdPersona_Tutor;
 
 -- CASO ERROR: menor sin tutor
 EXEC Person.Agr_Socio
+	@NroSocio = 'SN-8888',
 	@Nombre = 'Tomas',
 	@Apellido = 'Garcia',
 	@Email = 'tomas.garcia@gmail.com',
@@ -365,6 +368,7 @@ EXEC Person.Agr_Socio
 
 -- CASO ERROR: socio con obra social pero sin número válido
 EXEC Person.Agr_Socio
+	@NroSocio = 'SN-7777',
 	@Nombre = 'Lucia',
 	@Apellido = 'Fernandez',
 	@Email = 'lucia.fernandez@gmail.com',
@@ -480,7 +484,10 @@ SET @FacturaPago = SCOPE_IDENTITY();
 
 -- Agregar pago
 EXEC Payment.Agr_Pago
-    @Id_Factura = @FacturaPago,
+	@Id_Socio = 'SN-9999',
+    @Id_Pago = 1,
+	@Id_Factura = @FacturaPago,
+	@Fecha_Pago = '2025/06/25',
     @Medio_Pago = 'Tarjeta',
     @Monto = 1000,
     @Reembolso = 0,
@@ -489,14 +496,14 @@ EXEC Payment.Agr_Pago
 
 -- Modificar pago
 EXEC Payment.Modificar_Pago
-    @Id_Pago = @FacturaPago,
+    @Id_Pago = 1,
     @Medio_Pago = 'Transferencia',
     @Monto = 1200;
 
 -- Borrar pago
-EXEC Payment.Borrar_Pago @Id_Factura = @FacturaPago;
+EXEC Payment.Borrar_Pago @Id_Pago = 1;
 
-SELECT * FROM Payment.Pago WHERE Id_Factura = @FacturaPago;
+SELECT * FROM Payment.Pago WHERE Id_Pago = @FacturaPago;
 
 ---------------------------------------------------------------------------
 

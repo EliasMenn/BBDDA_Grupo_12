@@ -230,8 +230,6 @@ BEGIN
 	END CATCH
 	INSERT INTO Person.Socio (Id_Socio, Id_Persona,Id_Categoria,Telefono_Emergencia,Obra_Social,Nro_Obra_Social,Id_Tutor)
 	VALUES (@NroSocio, @Id_Persona, @Id_Categoria, @Telefono_Contacto_Emg, @Obra_Social, @Nro_Socio_Obra, @Id_Tutor)
-	SET @Id = SCOPE_IDENTITY();
-	RETURN @Id
 END
 GO
 
@@ -697,11 +695,11 @@ BEGIN
 
             -- Insertar el pago (registrando el original y el válido si corresponde)
             INSERT INTO Payment.Pago (
-                Id_Pago, Fecha_Pago, Responsable_Original, Responsable_Valido,
+                Id_Pago, Id_Factura, Fecha_Pago, Responsable_Original, Responsable_Valido,
                 Medio_Pago, Monto, Reembolso, Cantidad_Pago, Pago_Cuenta
             )
             VALUES (
-                @Id_Pago, @Fecha_Pago, @Id_Socio, @Responsable_Valido,
+                @Id_Pago, @Id_Factura, @Fecha_Pago, @Id_Socio, @Responsable_Valido,
                 @Medio_Pago, @Monto, @Reembolso, @Cantidad_Pago, @Pago_Cuenta
             );
         END

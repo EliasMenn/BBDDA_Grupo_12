@@ -147,7 +147,7 @@ GO
 
 ---------------------------------------- Para Tabla Socio ----------------------------------------
 CREATE OR ALTER PROCEDURE Person.Modificar_Socio
-	@Id_Socio INT,
+	@Id_Socio VARCHAR(20),
 	@Telefono_Contacto_Emg VARCHAR(15) = NULL,
 	@Obra_Social VARCHAR(25) = NULL,
 	@Nro_Socio_Obra VARCHAR(15) = NULL,
