@@ -71,7 +71,7 @@ BEGIN
 
 		IF NOT EXISTS (SELECT 1 FROM Person.Persona p
 		JOIN Person.Usuario u ON u.Id_persona = p.Id_Persona 
-		WHERE u.Id_Rol = 6) 
+		WHERE p.Id_Persona = @Id_Persona AND u.Id_Rol = 6) 
 		BEGIN 
 		
 		SET @Nombre_Cifrado = EncryptByPassPhrase(@FraseSecreta, @Nombre);
@@ -184,19 +184,19 @@ BEGIN
 
 		IF NOT EXISTS (SELECT 1 FROM Person.Persona p
 		JOIN Person.Usuario u ON u.Id_persona = p.Id_Persona 
-		WHERE u.Id_Rol = 6) 
+		WHERE p.Id_Persona = @Id_Persona AND u.Id_Rol = 6) 
 		BEGIN 
 		
-		SET @Nombre = DecryptByPassPhrase(@FraseSecreta, @Nombre_Cifrado);
-        SET @Apellido = DecryptByPassPhrase(@FraseSecreta, @Apellido_Cifrado);
-        SET @DNI = DecryptByPassPhrase(@FraseSecreta, @DNI_Cifrado);
-        SET @Email = DecryptByPassPhrase(@FraseSecreta, @Email_Cifrado);
-        SET @Telefono_Contacto = DecryptByPassPhrase(@FraseSecreta, @Telefono_Contacto_Cifrado);		
-		SET @Nombre_Usuario = DecryptByPassPhrase(@FraseSecreta, @Nombre_Usuario_Cifrado);
+		SET @Nombre = CONVERT(VARCHAR(25), DecryptByPassPhrase(@FraseSecreta, @Nombre_Cifrado));
+        SET @Apellido = CONVERT(VARCHAR(25), DecryptByPassPhrase(@FraseSecreta, @Apellido_Cifrado));
+        SET @DNI = CONVERT(VARCHAR(25), DecryptByPassPhrase(@FraseSecreta, @DNI_Cifrado));
+        SET @Email = CONVERT(VARCHAR(25), DecryptByPassPhrase(@FraseSecreta, @Email_Cifrado));
+        SET @Telefono_Contacto = CONVERT(VARCHAR(25), DecryptByPassPhrase(@FraseSecreta, @Telefono_Contacto_Cifrado));		
+		SET @Nombre_Usuario = CONVERT(VARCHAR(25), DecryptByPassPhrase(@FraseSecreta, @Nombre_Usuario_Cifrado));
 
-		SET @Telefono_Emergencia = DecryptByPassPhrase(@FraseSecreta, @Telefono_Emergencia_Cifrado);
-        SET @Obra_Social = DecryptByPassPhrase(@FraseSecreta, @Obra_Social_Cifrado);
-        SET @Nro_Obra_Social = DecryptByPassPhrase(@FraseSecreta, @Nro_Obra_Social_Cifrado);
+		SET @Telefono_Emergencia = CONVERT(VARCHAR(25), DecryptByPassPhrase(@FraseSecreta, @Telefono_Emergencia_Cifrado));
+        SET @Obra_Social = CONVERT(VARCHAR(25), DecryptByPassPhrase(@FraseSecreta, @Obra_Social_Cifrado));
+        SET @Nro_Obra_Social = CONVERT(VARCHAR(25), DecryptByPassPhrase(@FraseSecreta, @Nro_Obra_Social_Cifrado));
 		
 		UPDATE Person.Socio
 		SET 
