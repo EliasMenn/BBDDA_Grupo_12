@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/0f9a7f42-1844-4347-8cfb-15d9d6df4432)# Trabajo Práctico - Bases de Datos Aplicadas
+# Trabajo Práctico - Bases de Datos Aplicadas
 
 ## Link al repositorio
 
