@@ -1665,3 +1665,44 @@ BEGIN
     END CATCH
 END
 GO
+
+CREATE OR ALTER PROCEDURE Activity.Modificar_Asistencia
+	@Id_Socio VARCHAR(20),
+	@Actividad VARCHAR(30),
+	@Fecha DATE,
+	@Asistencia CHAR(1),
+	@Profesor VARCHAR(50)
+AS
+BEGIN
+	BEGIN TRY
+		IF EXISTS (SELECT 1 FROM Activity.Asistencia WHERE Id_Socio = @Id_Socio AND Nombre_Act = @Actividad AND Fecha = @Fecha)
+		BEGIN
+			IF UPPER(@Asistencia) NOT IN ('A','P','J')
+			BEGIN
+				PRINT('La asistencia no es válida')
+				RAISERROR('La asistencia no es válida',16,1)
+			END
+
+			IF @Profesor LIKE '%[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]%'
+			BEGIN
+				PRINT('El nombre del profesor no es válido')
+				RAISERROR('El nombre del profesor no es válido',16,1)
+			END
+		END
+
+		ELSE
+
+		BEGIN
+			PRINT('No se registro asistencia para ese socio en esa fecha y actividad')
+			RAISERROR('No se registro asistencia para ese socio en esa fecha y actividad',16,1)
+		END
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrió algo en el modificado de la asistencia',16,1)
+			RETURN;
+		END
+	END CATCH
+END
+GO

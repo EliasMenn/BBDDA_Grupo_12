@@ -1253,3 +1253,36 @@ BEGIN
 	COMMIT TRANSACTION
 END
 GO
+
+CREATE OR ALTER PROCEDURE Activity.Borrar_Asistencia
+	@Id_Socio VARCHAR(20),
+	@Actividad VARCHAR(30),
+	@Fecha DATE
+AS
+BEGIN
+	BEGIN TRY
+		IF EXISTS(SELECT 1 FROM Activity.Asistencia WHERE Id_Socio = @Id_Socio AND Nombre_Act = @Actividad AND Fecha = @Fecha)
+		BEGIN
+				DELETE 
+				FROM Activity.Asistencia
+				WHERE Id_Socio = @Id_Socio
+				AND Nombre_Act = @Actividad
+				AND Fecha = @Fecha
+		END
+
+		ELSE
+
+		BEGIN
+			PRINT('No se registro asistencia para ese socio en esa fecha y actividad')
+			RAISERROR('No se registro asistencia para ese socio en esa fecha y actividad',16,1)
+		END
+	END TRY
+	BEGIN CATCH
+		IF ERROR_SEVERITY() > 10
+		BEGIN
+			RAISERROR('Ocurrió algo en el borrado de la asistencia',16,1)
+			RETURN;
+		END
+	END CATCH
+END
+GO
