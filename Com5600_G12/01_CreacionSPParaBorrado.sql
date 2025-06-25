@@ -525,34 +525,19 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE Payment.Borrar_Pago
-	@Id_Factura INT
+	@Id_Pago INT
 AS
 BEGIN
 	SET NOCOUNT ON
 	BEGIN TRY
 		BEGIN TRANSACTION
 		DECLARE @Estado INT
-		IF EXISTS(SELECT 1 FROM Payment.Pago WHERE Id_Factura = @Id_Factura)
+		IF EXISTS(SELECT 1 FROM Payment.Pago WHERE Id_Pago = @Id_Pago)
 		BEGIN
-			SELECT @Estado = Estado_Factura
-			FROM Payment.Factura
-			WHERE Id_Factura = @Id_Factura
-			IF(LOWER(@Estado) LIKE 'pagada' OR LOWER(@Estado) LIKE 'anulada')
-			BEGIN
-				DELETE
-				FROM Payment.Pago
-				WHERE Id_Factura = @Id_Factura
-			END
-
-			ELSE
-
-			BEGIN
-				PRINT('La factura no se encuentra paga/anulada')
-				RAISERROR('La factura no se encuentra paga/anulada',16,1)
-			END
+			DELETE
+			FROM Payment.Pago
+			WHERE Id_Pago = @Id_Pago
 		END
-	
-		ELSE
 
 		BEGIN 
 			PRINT('No se encontro un pago')
@@ -602,11 +587,6 @@ BEGIN
 				IF EXISTS(SELECT 1 FROM Payment.Morosidad WHERE Id_Factura = @Id_Factura)
 				BEGIN
 					EXEC Payment.Borrar_Moroso
-						@Id_Factura
-				END
-				IF EXISTS(SELECT 1 FROM Payment.Pago WHERE Id_Factura = @Id_Factura)
-				BEGIN
-					EXEC Payment.Borrar_Pago
 						@Id_Factura
 				END
 				DELETE 
