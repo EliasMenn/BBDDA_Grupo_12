@@ -361,7 +361,7 @@ EXEC Person.Agr_Socio
 	@Nro_Socio_Obra = '1234',
 	@Id_Tutor = NULL
 
-SELECT * FROM Person.Socio
+SELECT Id_Socio, Id_Persona, Id_Categoria, Id_Tutor, Telefono_Emergencia, Obra_Social, Nro_Obra_Social FROM Person.Socio
 
 -- Agregamos la asistencia de los socios
 

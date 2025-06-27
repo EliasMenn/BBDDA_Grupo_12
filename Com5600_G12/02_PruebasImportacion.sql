@@ -34,8 +34,8 @@ EXEC Groups.Importar_Categorias
 
 SELECT * FROM Groups.Categoria
 
-DELETE FROM Groups.Categoria
-DBCC CHECKIDENT ('Groups.Categoria', RESEED, 99);
+--DELETE FROM Groups.Categoria
+--DBCC CHECKIDENT ('Groups.Categoria', RESEED, 99);
 
 ---------------------------------------------------------------------------------------
 ------------------------------ RESPONSABLES DE PAGO -----------------------------------
@@ -43,8 +43,8 @@ EXEC Person.Importar_Responsables_Pago
 	@RutaArchivo = 'C:\Users\Pedro Melissari\Desktop\Archivos BDD\Datos socios.xlsx',
 	@NombreHoja = 'Responsables de Pago$'
 
-SELECT * FROM Person.Persona
-SELECT * FROM Person.Socio
+SELECT Id_Persona, Nombre, Apellido, DNI, Email, Fecha_Nacimiento, Telefono_Contacto FROM Person.Persona
+SELECT Id_Socio, Id_Persona, Id_Categoria, Obra_Social, Nro_Obra_Social FROM Person.Socio
 SELECT * FROM Person.Tutor
 
 /*
@@ -78,7 +78,7 @@ EXEC Activity.Importar_Actividades
     @RangoCeldas = N'B1:D8';
 
 UPDATE Activity.Actividad
-SET Nombre = 'Ajedrez'
+SET Nombre = 'Ajedrez' -- Corrección de error del excel
 WHERE Nombre = 'Ajederez';
 
 --DELETE FROM Activity.Actividad
@@ -138,47 +138,6 @@ SELECT * FROM Payment.TipoMedio
 --DELETE FROM Payment.Medio_Pago
 
 ---------------------------------------------------------------------------------------
---------------------------------- SOCIO/MEDIO DE PAGO ---------------------------------
-
--- ASIGNO EFECTIVO COMO MEDIO DE PAGO A TODOS PARA PROBAR
-DECLARE @IdTipoEfectivo INT;
-SELECT @IdTipoEfectivo = Id_TipoMedio
-FROM Payment.TipoMedio
-WHERE Nombre_Medio = 'efectivo';
-
--- Socios sin medio de pago "efectivo"
-IF OBJECT_ID('tempdb..#SociosSinEfectivo') IS NOT NULL
-    DROP TABLE #SociosSinEfectivo;
-
-SELECT S.Id_Persona
-INTO #SociosSinEfectivo
-FROM Person.Socio S
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM Payment.Medio_Pago MP
-    WHERE MP.Id_Persona = S.Id_Persona
-      AND MP.Id_TipoMedio = @IdTipoEfectivo
-);
-
--- Iterar con WHILE
-DECLARE @IdPersona INT;
-
-WHILE EXISTS (SELECT 1 FROM #SociosSinEfectivo)
-BEGIN
-    SELECT TOP 1 @IdPersona = Id_Persona FROM #SociosSinEfectivo;
-
-    EXEC Payment.Agr_Medio_Pago
-        @Id_Persona = @IdPersona,
-        @Id_TipoMedio = @IdTipoEfectivo,
-        @Datos_Medio = 'n/a';
-
-    DELETE FROM #SociosSinEfectivo WHERE Id_Persona = @IdPersona;
-END
-
-SELECT * FROM Payment.Medio_Pago p JOIN Payment.TipoMedio t ON p.Id_TipoMedio = t .Id_TipoMedio
-
-
----------------------------------------------------------------------------------------
 ------------------------------------- ASISTENCIAS -------------------------------------
 
 EXEC Activity.Importar_Asistencia
@@ -197,5 +156,5 @@ EXEC Payment.Importar_Pagos
     @RutaArchivo = 'C:\Users\Pedro Melissari\Desktop\Archivos BDD\Datos socios.xlsx',
     @NombreHoja = 'pago cuotas$'
 
-SELECT * FROM Payment.Pago ORDER BY Responsable_Original
+SELECT Id_Pago, Fecha_Pago, Responsable_Original, Responsable_Valido, Medio_Pago, Monto, Reembolso, Cantidad_Pago FROM Payment.Pago ORDER BY Responsable_Original
 --DELETE FROM Payment.Pago
