@@ -41,8 +41,8 @@
           <FullPath>01_CreacionSPParaBorrado.sql</FullPath>
         </FileNode>
         <FileNode Name="01_CreacionSPParaModificado.sql">
-          <AssociatedConnectionMoniker />
-          <AssociatedConnSrvName />
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-EP8K6LO\SQLTEST:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-EP8K6LO\SQLTEST</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>01_CreacionSPParaModificado.sql</FullPath>
         </FileNode>
@@ -53,8 +53,8 @@
           <FullPath>01_PruebasSPABM.sql</FullPath>
         </FileNode>
         <FileNode Name="02_PruebasImportacion.sql">
-          <AssociatedConnectionMoniker />
-          <AssociatedConnSrvName />
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-EP8K6LO\SQLTEST:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-EP8K6LO\SQLTEST</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>02_PruebasImportacion.sql</FullPath>
         </FileNode>
@@ -65,8 +65,8 @@
           <FullPath>02_SPImportacion.sql</FullPath>
         </FileNode>
         <FileNode Name="03_CreacionReportes.sql">
-          <AssociatedConnectionMoniker />
-          <AssociatedConnSrvName />
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-EP8K6LO\SQLTEST:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-EP8K6LO\SQLTEST</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>03_CreacionReportes.sql</FullPath>
         </FileNode>
@@ -77,26 +77,32 @@
           <FullPath>03_PruebaReportes.sql</FullPath>
         </FileNode>
         <FileNode Name="04_CreacionRoles.sql">
-          <AssociatedConnectionMoniker />
-          <AssociatedConnSrvName />
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-EP8K6LO\SQLTEST:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-EP8K6LO\SQLTEST</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>04_CreacionRoles.sql</FullPath>
         </FileNode>
         <FileNode Name="04_PruebaEncriptado.sql">
-          <AssociatedConnectionMoniker />
-          <AssociatedConnSrvName />
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-EP8K6LO\SQLTEST:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-EP8K6LO\SQLTEST</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>04_PruebaEncriptado.sql</FullPath>
         </FileNode>
+        <FileNode Name="04_PruebaRol.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-EP8K6LO\SQLTEST:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-EP8K6LO\SQLTEST</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>04_PruebaRol.sql</FullPath>
+        </FileNode>
         <FileNode Name="04_SPEncriptado.sql">
-          <AssociatedConnectionMoniker />
-          <AssociatedConnSrvName />
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-EP8K6LO\SQLTEST:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-EP8K6LO\SQLTEST</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>04_SPEncriptado.sql</FullPath>
         </FileNode>
         <FileNode Name="04_SPParaAsignarRol.sql">
-          <AssociatedConnectionMoniker />
-          <AssociatedConnSrvName />
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:DESKTOP-EP8K6LO\SQLTEST:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>DESKTOP-EP8K6LO\SQLTEST</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>04_SPParaAsignarRol.sql</FullPath>
         </FileNode>

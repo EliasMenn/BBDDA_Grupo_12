@@ -92,8 +92,11 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::Payment TO Jefe_Tesoreria;
 -----------------------------------------------------------------------------------------------------------------------------------
 
 ------------------------------------------ PARA ROL DE JEFE DE ADMIINSTRADOR DE COBRANZAS ------------------------------------------
--- Permisos específicos para ver y modificar facturas
-GRANT SELECT, UPDATE ON Payment.Factura TO Administrativo_Cobranzas
+-- Permisos para modificar facturas
+GRANT EXECUTE ON Payment.Modificar_Factura TO Administrativo_Cobranzas
+
+-- Permisos específicos para ver facturas
+GRANT SELECT ON Payment.Factura TO Administrativo_Cobranzas
 
 -- Permisos específicos para ver Detalles_Factura
 GRANT SELECT ON Payment.Detalle_Factura TO Administrativo_Cobranzas
@@ -105,10 +108,15 @@ GRANT SELECT ON Payment.Morosidad TO Administrativo_Cobranzas
 GRANT SELECT, INSERT ON Payment.Pago TO Administrativo_Cobranzas
 
 -- Permisos específicos para ver, insertar y modificar Medios de Pago
-GRANT SELECT, INSERT, UPDATE ON Payment.Medio_Pago TO Administrativo_Cobranzas
+GRANT EXECUTE ON Payment.Agr_TipoMedio TO Administrativo_Cobranzas
+GRANT EXECUTE ON Payment.Modificar_TipoMedio TO Administrativo_Cobranzas
+
+GRANT SELECT ON Payment.Medio_Pago TO Administrativo_Cobranzas
 
 -- Permisos específicos para ver y modificar Cuenta
-GRANT SELECT, UPDATE ON Payment.Cuenta TO Administrativo_Cobranzas
+GRANT EXECUTE ON Payment.Modificar_Cuenta TO Administrativo_Cobranzas
+
+GRANT SELECT ON Payment.Cuenta TO Administrativo_Cobranzas
 
 -- Permisos específicos para ver Refrencia de Detalle
 GRANT SELECT ON Payment.Referencia_Detalle TO Administrativo_Cobranzas
@@ -116,8 +124,13 @@ GRANT SELECT ON Payment.Referencia_Detalle TO Administrativo_Cobranzas
 
 
 --------------------------------------------- PARA ROL DE ADMIINSTRATIVO DE MOROSIDAD ---------------------------------------------
+-- Permisos para gestion de morosidad
+GRANT EXECUTE ON Payment.Agr_Morosidad TO Administrativo_Morosidad
+GRANT EXECUTE ON Payment.Modificar_Morosidad TO Administrativo_Morosidad
+GRANT EXECUTE ON Payment.Borrar_Moroso TO Administrativo_Morosidad
+
 -- Permisos para gestión de morosidad
-GRANT SELECT, UPDATE, INSERT, DELETE ON Payment.Morosidad TO Administrativo_Morosidad;
+GRANT SELECT ON Payment.Morosidad TO Administrativo_Morosidad;
 
 -- Permisos para ver Facturas
 GRANT SELECT ON Payment.Factura TO Administrativo_Morosidad;
@@ -134,11 +147,21 @@ GRANT SELECT ON Payment.Pago TO Administrativo_Morosidad;
 
 
 -------------------------------------------- PARA ROL DE ADMIINSTRATIVO DE FACTURACION --------------------------------------------
--- Permisos para ver, insertar, modifcat y borrar Facturas
-GRANT SELECT, INSERT, UPDATE, DELETE ON Payment.Detalle_Factura TO Administrativo_Facturacion;
+-- Permisos para insertar, modifcat y borrar detalles de Facturas
+GRANT EXECUTE ON Payment.Agr_Detalle_Factura TO Administrativo_Facturacion
+GRANT EXECUTE ON Payment.Modificar_Detalle_Factura TO Administrativo_Facturacion
+GRANT EXECUTE ON Payment.Borrar_Detalle_Factura TO Administrativo_Facturacion
+
+-- Permisos para ver detalles de factura
+GRANT SELECT ON Payment.Detalle_Factura TO Administrativo_Facturacion;
+
+-- Permisos para insertar, modifcat y borrar Facturas
+GRANT EXECUTE ON Payment.Agr_Factura TO Administrativo_Facturacion
+GRANT EXECUTE ON Payment.Modificar_Factura TO Administrativo_Facturacion
+GRANT EXECUTE ON Payment.Borrar_Factura TO Administrativo_Facturacion
 
 -- Permisos para ver, insertar y modificar Detalles de Factura
-GRANT SELECT, INSERT, UPDATE ON Payment.Factura TO Administrativo_Facturacion;
+GRANT SELECT ON Payment.Factura TO Administrativo_Facturacion;
 
 -- Permisos para ver Referencia de Detalles
 GRANT SELECT ON Payment.Referencia_Detalle TO Administrativo_Facturacion;
@@ -159,19 +182,34 @@ GRANT SELECT ON Payment.Pago TO Administrativo_Facturacion;
 
 ------------------------------------------------PARA ROL DE ADMINISTRATIVO DE SOCIO------------------------------------------------
 -- Permisos para ver, insertar y modificar personas
-GRANT SELECT, INSERT, UPDATE ON Person.Persona TO Administrativo_Socio;
+GRANT EXECUTE ON Person.Agr_Persona TO Administrativo_Socio
+GRANT EXECUTE ON Person.Modificar_Persona TO Administrativo_Socio
+
+GRANT SELECT ON Person.Persona TO Administrativo_Socio;
 
 -- Permisos para ver, insertar y modificar tutores
-GRANT SELECT, INSERT, UPDATE ON Person.Tutor TO Administrativo_Socio;
+GRANT EXECUTE ON Person.Agr_Tutor TO Administrativo_Socio
+GRANT EXECUTE ON Person.Modificar_Tutor TO Administrativo_Socio
+
+GRANT SELECT ON Person.Tutor TO Administrativo_Socio;
 
 -- Permisos para ver, insertar y modificar socios
-GRANT SELECT, INSERT, UPDATE ON Person.Socio TO Administrativo_Socio;
+GRANT EXECUTE ON Person.Agr_Socio TO Administrativo_Socio
+GRANT EXECUTE ON Person.Modificar_Socio TO Administrativo_Socio
+
+GRANT SELECT ON Person.Socio TO Administrativo_Socio;
 
 -- Permisos para ver, insertar y modificar grupos familiares
-GRANT SELECT, INSERT, UPDATE ON Groups.Grupo_Familiar TO Administrativo_Socio;
+GRANT EXECUTE ON Groups.Agr_Grupo_Familiar TO Administrativo_Socio
+GRANT EXECUTE ON Groups.Modificar_Grupo_Familiar TO Administrativo_Socio
+
+GRANT SELECT ON Groups.Grupo_Familiar TO Administrativo_Socio;
 
 -- Permisos para ver, insertar y modificar miembros de familias
-GRANT SELECT, INSERT, UPDATE ON Groups.Miembro_Familia TO Administrativo_Socio;
+GRANT EXECUTE ON Groups.Agr_Miembro_Familia TO Administrativo_Socio
+GRANT EXECUTE ON Groups.Modificar_Miembro_Familia TO Administrativo_Socio
+
+GRANT SELECT ON Groups.Miembro_Familia TO Administrativo_Socio;
 
 -- Permisos para consultar categorías (no modifica)
 GRANT SELECT ON Groups.Categoria TO Administrativo_Socio;

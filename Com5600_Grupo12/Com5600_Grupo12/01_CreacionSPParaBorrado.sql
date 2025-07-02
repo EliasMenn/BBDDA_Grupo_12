@@ -476,7 +476,7 @@ BEGIN
 	SET NOCOUNT ON
 	BEGIN TRY
 		BEGIN TRANSACTION
-		DECLARE @Estado INT
+		DECLARE @Estado VARCHAR(10)
 		IF EXISTS(SELECT 1 FROM Payment.Morosidad WHERE Id_Factura = @Id_Factura)
 		BEGIN
 			SELECT @Estado = Estado_Factura
@@ -571,7 +571,7 @@ BEGIN
 	SET NOCOUNT ON
 	BEGIN TRY
 		BEGIN TRANSACTION
-		DECLARE @Estado INT
+		DECLARE @Estado VARCHAR(10)
 		IF EXISTS(SELECT 1 FROM Payment.Factura WHERE Id_Factura = @Id_Factura)
 		BEGIN
 			SELECT @Estado = Estado_Factura
@@ -579,12 +579,12 @@ BEGIN
 			WHERE Id_Factura = @Id_Factura
 			IF(LOWER(@Estado) LIKE 'pagada' OR LOWER(@Estado) LIKE 'anulada')
 			BEGIN
-				IF EXISTS(SELECT 1 FROM Payment.Detalle_Factura WHERE Id_Factura = @Id_Factura)
+				IF EXISTS(SELECT 1 FROM Payment.Detalle_Factura df WHERE df.Id_Factura = @Id_Factura)
 				BEGIN 
 					EXEC Payment.Borrar_Detalle_Factura
 						@Id_Factura
 				END
-				IF EXISTS(SELECT 1 FROM Payment.Morosidad WHERE Id_Factura = @Id_Factura)
+				IF EXISTS(SELECT 1 FROM Payment.Morosidad m WHERE m.Id_Factura = @Id_Factura)
 				BEGIN
 					EXEC Payment.Borrar_Moroso
 						@Id_Factura
@@ -611,7 +611,7 @@ BEGIN
 	BEGIN CATCH
 		IF ERROR_SEVERITY() > 10
 		BEGIN
-			RAISERROR('Ocurrio algo durante el borrado de pago',16,1)
+			RAISERROR('Ocurrio algo durante el borrado de factura',16,1)
 			IF @@TRANCOUNT > 0
 			BEGIN
 				ROLLBACK TRANSACTION
