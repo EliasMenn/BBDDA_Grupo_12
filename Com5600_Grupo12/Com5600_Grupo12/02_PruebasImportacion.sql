@@ -34,8 +34,8 @@ EXEC Groups.Importar_Categorias
 
 SELECT * FROM Groups.Categoria
 
-DELETE FROM Groups.Categoria
-DBCC CHECKIDENT ('Groups.Categoria', RESEED, 99);
+--DELETE FROM Groups.Categoria
+--DBCC CHECKIDENT ('Groups.Categoria', RESEED, 99);
 
 ---------------------------------------------------------------------------------------
 ------------------------------ RESPONSABLES DE PAGO -----------------------------------
@@ -136,47 +136,6 @@ EXEC Payment.Agr_TipoMedio
 SELECT * FROM Payment.TipoMedio
 --DELETE FROM Payment.TipoMedio
 --DELETE FROM Payment.Medio_Pago
-
----------------------------------------------------------------------------------------
---------------------------------- SOCIO/MEDIO DE PAGO ---------------------------------
-
--- ASIGNO EFECTIVO COMO MEDIO DE PAGO A TODOS PARA PROBAR
-DECLARE @IdTipoEfectivo INT;
-SELECT @IdTipoEfectivo = Id_TipoMedio
-FROM Payment.TipoMedio
-WHERE Nombre_Medio = 'efectivo';
-
--- Socios sin medio de pago "efectivo"
-IF OBJECT_ID('tempdb..#SociosSinEfectivo') IS NOT NULL
-    DROP TABLE #SociosSinEfectivo;
-
-SELECT S.Id_Persona
-INTO #SociosSinEfectivo
-FROM Person.Socio S
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM Payment.Medio_Pago MP
-    WHERE MP.Id_Persona = S.Id_Persona
-      AND MP.Id_TipoMedio = @IdTipoEfectivo
-);
-
--- Iterar con WHILE
-DECLARE @IdPersona INT;
-
-WHILE EXISTS (SELECT 1 FROM #SociosSinEfectivo)
-BEGIN
-    SELECT TOP 1 @IdPersona = Id_Persona FROM #SociosSinEfectivo;
-
-    EXEC Payment.Agr_Medio_Pago
-        @Id_Persona = @IdPersona,
-        @Id_TipoMedio = @IdTipoEfectivo,
-        @Datos_Medio = 'n/a';
-
-    DELETE FROM #SociosSinEfectivo WHERE Id_Persona = @IdPersona;
-END
-
-SELECT * FROM Payment.Medio_Pago p JOIN Payment.TipoMedio t ON p.Id_TipoMedio = t .Id_TipoMedio
-
 
 ---------------------------------------------------------------------------------------
 ------------------------------------- ASISTENCIAS -------------------------------------
