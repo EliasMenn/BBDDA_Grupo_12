@@ -43,10 +43,10 @@ Se implementaron procedimientos en los siguientes esquemas:
 
 ## Integrantes - Grupo 12
 
-- DEL VALLE, FEDERICO (43316258), Nick: Federico Del Valle
-- MEDINA, JUAN IGNACIO (46682620), Nick: JuanMedina613
-- MELISSARI, LUIS PEDRO JOSE (46912033), Nick: FuturoIngPedro
-- MENNELLA, ELIAS DAMIAN (46357008), Nick: EliasMenn
+- DEL VALLE, FEDERICO, Nick: Federico Del Valle
+- MEDINA, JUAN IGNACIO, Nick: JuanMedina613
+- MELISSARI, LUIS PEDRO JOSE, Nick: FuturoIngPedro
+- MENNELLA, ELIAS DAMIAN, Nick: EliasMenn
 
 ## Actualización DER 20/06/2025
 - Se modificó el campo de Id_Socio, paso de ser INT a tipo VARCHAR(20)
